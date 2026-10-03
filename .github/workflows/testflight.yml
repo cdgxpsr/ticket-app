@@ -1,0 +1,31 @@
+name: TestFlight build
+
+on:
+  workflow_dispatch:
+
+jobs:
+  ios:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - uses: expo/expo-github-action@v8
+        with:
+          eas-version: latest
+          token: ${{ secrets.EXPO_TOKEN }}
+      - run: npm ci --legacy-peer-deps
+      - run: eas init --non-interactive --force
+      # Builds on Expo's servers, then uploads to App Store Connect (TestFlight).
+      - name: App Store Connect key
+        run: echo "$ASC_KEY_P8" > /tmp/asc.p8
+        env:
+          ASC_KEY_P8: ${{ secrets.ASC_KEY_P8 }}
+      - run: eas build --platform ios --profile production --non-interactive --no-wait --auto-submit
+        env:
+          EXPO_ASC_API_KEY_PATH: /tmp/asc.p8
+          EXPO_ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+          EXPO_ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
+          EXPO_APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
