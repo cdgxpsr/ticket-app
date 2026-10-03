@@ -14,15 +14,15 @@ export const StoryShareView = forwardRef<View, { ticket: Ticket }>(function Stor
     <View ref={ref} collapsable={false} style={styles.root}>
       <View style={styles.header}>
         <CatAvatar size={72} />
-        <Text style={styles.wordmark}>냥수첩</Text>
+        <Text style={styles.wordmark}>냥냥수첩</Text>
       </View>
       <View style={styles.stamp}>
         <PawStamp size={88} color={colors.accent} rotate={-18} />
       </View>
       <TicketCard ticket={ticket} large />
       <View style={styles.footer}>
-        <Text style={styles.cta}>냥수첩에서 내 관람 기록 모으기</Text>
-        <Text style={styles.small}>냥수첩</Text>
+        <Text style={styles.cta}>냥냥수첩에서 내 관람 기록 모으기</Text>
+        <Text style={styles.small}>냥냥수첩</Text>
       </View>
     </View>
   );

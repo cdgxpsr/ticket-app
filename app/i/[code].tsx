@@ -27,7 +27,7 @@ export default function InviteWelcome() {
       <View style={styles.body}>
         <PawStamp size={64} color={colors.accent} rotate={-18} />
         <CatAvatar size={120} />
-        <Text style={styles.title}>냥수첩에 오신 걸 환영해요</Text>
+        <Text style={styles.title}>냥냥수첩에 오신 걸 환영해요</Text>
         <Text style={styles.desc}>친구의 초대로 아바타 아이템 선물이 도착했어요.</Text>
         <Pressable style={[styles.btn, claimed && styles.btnDone]} disabled={claimed} onPress={claim}>
           <Text style={[styles.btnText, claimed && { color: colors.muted }]}>{claimed ? '받았어요' : '받기'}</Text>

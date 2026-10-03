@@ -13,7 +13,7 @@ export default function Invite() {
   const [copied, setCopied] = useState(false);
 
   const share = () =>
-    Share.share({ message: `냥수첩에서 같이 관람 기록 모아요. 초대 링크로 가입하면 우리 둘 다 아바타 아이템 선물을 받아요.\n${link}`, url: link });
+    Share.share({ message: `냥냥수첩에서 같이 관람 기록 모아요. 초대 링크로 가입하면 우리 둘 다 아바타 아이템 선물을 받아요.\n${link}`, url: link });
   const copy = async () => {
     await Clipboard.setStringAsync(link);
     setCopied(true);
