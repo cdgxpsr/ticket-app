@@ -1,14 +1,17 @@
 import * as Clipboard from 'expo-clipboard';
 import { router } from 'expo-router';
-import { useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Pressable, Share, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { CatAvatar } from '../src/components/CatAvatar';
-import { getMyInviteCode, inviteLink } from '../src/lib/invite';
+import { getMyInviteCode, inviteLink, refreshMyInviteCode } from '../src/lib/invite';
 import { colors, fonts } from '../src/theme';
 
 export default function Invite() {
-  const code = useMemo(() => getMyInviteCode(), []);
+  const [code, setCode] = useState(getMyInviteCode);
+  useEffect(() => {
+    refreshMyInviteCode().then(setCode).catch(() => {});
+  }, []);
   const link = inviteLink(code);
   const [copied, setCopied] = useState(false);
 

@@ -6,7 +6,7 @@ import { OriginalAlbum } from '../../src/components/OriginalAlbum';
 import { Screen } from '../../src/components/Screen';
 import { Segmented } from '../../src/components/Segmented';
 import { Ticket, TicketCard } from '../../src/components/TicketCard';
-import { listCards, SavedCard } from '../../src/lib/cards';
+import { listCards, SavedCard, syncCards } from '../../src/lib/cards';
 import { listOriginals, OriginalPhoto } from '../../src/lib/originals';
 import { colors, fonts } from '../../src/theme';
 
@@ -22,7 +22,7 @@ export default function Tickets() {
   const [mode, setMode] = useState<Mode>('cards');
   const [photos, setPhotos] = useState<OriginalPhoto[]>([]);
   const [cards, setCards] = useState<SavedCard[]>([]);
-  useFocusEffect(useCallback(() => { setPhotos(listOriginals()); setCards(listCards()); }, []));
+  useFocusEffect(useCallback(() => { setPhotos(listOriginals()); setCards(listCards()); syncCards().then(setCards).catch(() => {}); }, []));
 
   return (
     <Screen

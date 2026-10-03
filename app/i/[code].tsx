@@ -18,7 +18,11 @@ export default function InviteWelcome() {
   }, [code]);
 
   const claim = async () => {
-    await claimInviteReward(); // local stub; backend needed for real granting
+    try {
+      await claimInviteReward();
+    } catch {
+      return; // network/server error: allow retry
+    }
     setClaimed(true);
   };
 
