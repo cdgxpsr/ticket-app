@@ -5,6 +5,7 @@ import { OriginalAlbum } from '../../src/components/OriginalAlbum';
 import { Screen } from '../../src/components/Screen';
 import { Segmented } from '../../src/components/Segmented';
 import { Ticket, TicketCard } from '../../src/components/TicketCard';
+import { listCards, SavedCard } from '../../src/lib/cards';
 import { listOriginals, OriginalPhoto } from '../../src/lib/originals';
 import { colors, fonts } from '../../src/theme';
 
@@ -19,7 +20,8 @@ type Mode = 'cards' | 'originals';
 export default function Tickets() {
   const [mode, setMode] = useState<Mode>('cards');
   const [photos, setPhotos] = useState<OriginalPhoto[]>([]);
-  useFocusEffect(useCallback(() => setPhotos(listOriginals()), []));
+  const [cards, setCards] = useState<SavedCard[]>([]);
+  useFocusEffect(useCallback(() => { setPhotos(listOriginals()); setCards(listCards()); }, []));
 
   return (
     <Screen
@@ -32,7 +34,14 @@ export default function Tickets() {
       }
     >
       <Segmented<Mode> options={[{ key: 'cards', label: '카드' }, { key: 'originals', label: '원본 앨범' }]} value={mode} onChange={setMode} />
-      {mode === 'cards' ? SAMPLE.map((t) => <TicketCard key={t.id} ticket={t} />) : <OriginalAlbum photos={photos} />}
+      {mode === 'cards'
+        ? cards.length
+          ? cards.map((c) => (
+              <Pressable key={c.id} onPress={() => router.push({ pathname: '/card/[id]', params: { id: c.id } })}>
+                <TicketCard ticket={c} />
+              </Pressable>
+            ))
+          : SAMPLE.map((t) => <TicketCard key={t.id} ticket={t} />) : <OriginalAlbum photos={photos} />}
     </Screen>
   );
 }

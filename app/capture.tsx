@@ -7,7 +7,7 @@ import { saveOriginal } from '../src/lib/originals';
 import { colors, fonts } from '../src/theme';
 
 type Pt = { x: number; y: number };
-type Step = { kind: 'pick' } | { kind: 'crop'; uri: string } | { kind: 'done'; uri: string; auto: boolean };
+type Step = { kind: 'pick' } | { kind: 'crop'; uri: string } | { kind: 'done'; uri: string; auto: boolean; originalUri?: string };
 
 /**
  * 자동 테두리 인식 + 원근 보정은 react-native-document-scanner-plugin(네이티브 모듈)을 쓴다.
@@ -41,7 +41,8 @@ export default function Capture() {
       const r = await scanner.scanDocument({ maxNumDocuments: 1, croppedImageQuality: 100 });
       const uri = r.scannedImages?.[0];
       if (r.status === 'cancel' || !uri) return;
-      setStep({ kind: 'done', uri, auto: true });
+      const original = saveOriginal(uri);
+      setStep({ kind: 'done', uri: original.uri, auto: true, originalUri: original.uri });
     } catch {
       Alert.alert('스캔 실패', '다시 시도해 주세요.');
     }
@@ -64,13 +65,13 @@ export default function Capture() {
         </View>
       )}
 
-      {step.kind === 'crop' && <CornerCrop uri={step.uri} onDone={() => setStep({ kind: 'done', uri: step.uri, auto: false })} />}
+      {step.kind === 'crop' && <CornerCrop uri={step.uri} onDone={() => setStep({ kind: 'done', uri: step.uri, auto: false, originalUri: step.uri })} />}
 
       {step.kind === 'done' && (
         <View style={styles.body}>
           <Image source={{ uri: step.uri }} style={styles.preview} resizeMode="contain" />
           <Text style={styles.desc}>{step.auto ? '자동으로 잘라내고 기울기를 보정했어요.' : '원본을 원본 앨범에 보관했어요.'}</Text>
-          <Btn label="카드로 만들기" primary onPress={() => Alert.alert('준비 중', '카드 만들기는 곧 지원될 예정이에요.')} />
+          <Btn label="카드로 만들기" primary onPress={() => router.replace({ pathname: '/card/new', params: { imageUri: step.uri, originalUri: step.originalUri ?? '' } })} />
           <Btn label="완료" onPress={() => router.back()} />
         </View>
       )}

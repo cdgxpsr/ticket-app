@@ -1,0 +1,9 @@
+{
+  "name": "nyang-recognize",
+  "private": true,
+  "type": "module",
+  "main": "api/recognize.js",
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.60.0"
+  }
+}
