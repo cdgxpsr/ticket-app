@@ -15,7 +15,10 @@
     },
     "ios": {
       "bundleIdentifier": "com.nyangsucheop.app",
-      "supportsTablet": false
+      "supportsTablet": false,
+      "associatedDomains": [
+        "applinks:nyangsucheop.app"
+      ]
     },
     "android": {
       "package": "com.nyangsucheop.app"
@@ -33,7 +36,15 @@
         }
       ],
       "expo-status-bar",
-      "react-native-document-scanner-plugin"
+      "react-native-document-scanner-plugin",
+      [
+        "expo-media-library",
+        {
+          "photosPermission": "관람 기록 이미지를 앨범에 저장하려면 사진 접근이 필요해요.",
+          "savePhotosPermission": "관람 기록 이미지를 앨범에 저장하려면 사진 추가 권한이 필요해요.",
+          "isAccessMediaLocationEnabled": false
+        }
+      ]
     ]
   }
 }

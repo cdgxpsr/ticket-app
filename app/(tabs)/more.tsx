@@ -1,3 +1,4 @@
+import { router } from 'expo-router';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { CatAvatar } from '../../src/components/CatAvatar';
 import { Screen } from '../../src/components/Screen';
@@ -11,6 +12,12 @@ const SETTINGS = [
 export default function More() {
   return (
     <Screen title="더보기" header={<CatAvatar size={56} />}>
+      <View style={styles.group}>
+        <Pressable style={styles.row} onPress={() => router.push('/invite')}>
+          <Text style={styles.label}>친구 초대</Text>
+          <Text style={styles.value}>아이템 선물</Text>
+        </Pressable>
+      </View>
       <Text style={styles.section}>설정</Text>
       <View style={styles.group}>
         {SETTINGS.map((s, i) => (
