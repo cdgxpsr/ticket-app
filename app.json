@@ -19,7 +19,10 @@
       "associatedDomains": [
         "applinks:nyangsucheop.app"
       ],
-      "usesAppleSignIn": true
+      "usesAppleSignIn": true,
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false
+      }
     },
     "android": {
       "package": "com.nyangsucheop.app"
