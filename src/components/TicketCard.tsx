@@ -13,7 +13,6 @@ export function TicketCard({ ticket, large }: { ticket: Ticket; large?: boolean 
         <Text style={[styles.title, large && styles.titleLarge]}>{ticket.title || '제목 없음'}</Text>
         <Text style={styles.meta}>{ticket.venue}</Text>
         <Text style={styles.meta}>{[ticket.date, ticket.time].filter(Boolean).join(' ')}{ticket.seat ? ` · ${ticket.seat}` : ''}</Text>
-        <Text style={styles.price}>[가격]</Text>
       </View>
       <View style={styles.stamp}>
         <PawStamp size={large ? 56 : 28} />
