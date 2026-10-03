@@ -1,0 +1,53 @@
+{
+  "expo": {
+    "name": "냥냥수첩",
+    "slug": "nyangsucheop",
+    "scheme": "nyangsucheop",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "dark",
+    "backgroundColor": "#16131C",
+    "splash": {
+      "image": "./assets/splash-icon.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#16131C"
+    },
+    "ios": {
+      "bundleIdentifier": "com.nyangsucheop.app",
+      "supportsTablet": false,
+      "associatedDomains": [
+        "applinks:nyangsucheop.app"
+      ],
+      "usesAppleSignIn": true
+    },
+    "android": {
+      "package": "com.nyangsucheop.app"
+    },
+    "plugins": [
+      "expo-router",
+      [
+        "expo-font",
+        {
+          "fonts": [
+            "./assets/fonts/Pretendard-Regular.otf",
+            "./assets/fonts/Pretendard-SemiBold.otf",
+            "./assets/fonts/Pretendard-Bold.otf"
+          ]
+        }
+      ],
+      "expo-status-bar",
+      "react-native-document-scanner-plugin",
+      [
+        "expo-media-library",
+        {
+          "photosPermission": "관람 기록 이미지를 앨범에 저장하려면 사진 접근이 필요해요.",
+          "savePhotosPermission": "관람 기록 이미지를 앨범에 저장하려면 사진 추가 권한이 필요해요.",
+          "isAccessMediaLocationEnabled": false
+        }
+      ],
+      "expo-web-browser",
+      "expo-apple-authentication"
+    ]
+  }
+}
