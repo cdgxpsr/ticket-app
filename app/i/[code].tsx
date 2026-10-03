@@ -1,3 +1,4 @@
+import { requireAccount } from '../../src/lib/auth';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
@@ -18,6 +19,7 @@ export default function InviteWelcome() {
   }, [code]);
 
   const claim = async () => {
+    if (!(await requireAccount())) return;
     try {
       await claimInviteReward();
     } catch {

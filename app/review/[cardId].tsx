@@ -1,3 +1,4 @@
+import { requireAccount } from '../../src/lib/auth';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useMemo, useState } from 'react';
 import { KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
@@ -23,6 +24,7 @@ export default function WriteReview() {
 
   const save = async () => {
     if (!ok || !show) return;
+    if (!(await requireAccount())) return;
     setBusy(true);
     await repo.createReview({ show, rating, text: text.trim(), cardId: card!.id });
     const total = await repo.addStamp(1);

@@ -18,7 +18,8 @@
       "supportsTablet": false,
       "associatedDomains": [
         "applinks:nyangsucheop.app"
-      ]
+      ],
+      "usesAppleSignIn": true
     },
     "android": {
       "package": "com.nyangsucheop.app"
@@ -44,7 +45,9 @@
           "savePhotosPermission": "관람 기록 이미지를 앨범에 저장하려면 사진 추가 권한이 필요해요.",
           "isAccessMediaLocationEnabled": false
         }
-      ]
+      ],
+      "expo-web-browser",
+      "expo-apple-authentication"
     ]
   }
 }

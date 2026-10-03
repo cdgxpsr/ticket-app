@@ -15,7 +15,9 @@ export default function RootLayout() {
   return (
     <>
       <StatusBar style="light" />
-      <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: colors.bg } }} />
+      <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: colors.bg } }}>
+        <Stack.Screen name="login" options={{ presentation: 'formSheet', sheetAllowedDetents: [0.55], sheetGrabberVisible: false }} />
+      </Stack>
       <ToastHost />
     </>
   );

@@ -1,3 +1,4 @@
+import { requireAccount } from '../src/lib/auth';
 import { useEffect, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -19,6 +20,7 @@ export default function Friends() {
 
   const add = async () => {
     if (!code.trim()) return;
+    if (!(await requireAccount())) return;
     try {
       const u = await repo.addFriend(code);
       setCode('');

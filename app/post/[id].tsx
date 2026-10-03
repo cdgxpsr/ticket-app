@@ -1,3 +1,4 @@
+import { requireAccount } from '../../src/lib/auth';
 import { useLocalSearchParams } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
@@ -17,6 +18,7 @@ export default function PostDetail() {
 
   const send = async () => {
     if (!text.trim()) return;
+    if (!(await requireAccount())) return;
     await repo.comment(id, text.trim());
     setText('');
     reload();

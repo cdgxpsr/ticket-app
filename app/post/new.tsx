@@ -1,3 +1,4 @@
+import { requireAccount } from '../../src/lib/auth';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
 import { KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
@@ -16,6 +17,7 @@ export default function NewPost() {
 
   const submit = async () => {
     if (!ok) return;
+    if (!(await requireAccount())) return;
     const p = await repo.createPost({ board, title: title.trim(), body: body.trim() });
     router.replace(`/post/${p.id}`);
   };
