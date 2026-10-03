@@ -11,9 +11,13 @@ const SETTINGS = [
 
 export default function More() {
   return (
-    <Screen title="더보기" header={<CatAvatar size={56} />}>
+    <Screen title="더보기" header={<Pressable onPress={() => router.push('/avatar')} accessibilityLabel="아바타 꾸미기"><CatAvatar size={56} /></Pressable>}>
       <View style={styles.group}>
-        <Pressable style={styles.row} onPress={() => router.push('/invite')}>
+        <Pressable style={styles.row} onPress={() => router.push('/avatar')}>
+          <Text style={styles.label}>내 고양이 꾸미기</Text>
+          <Text style={styles.value}>아바타</Text>
+        </Pressable>
+        <Pressable style={[styles.row, styles.divider]} onPress={() => router.push('/invite')}>
           <Text style={styles.label}>친구 초대</Text>
           <Text style={styles.value}>아이템 선물</Text>
         </Pressable>

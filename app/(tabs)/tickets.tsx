@@ -1,6 +1,7 @@
 import { router, useFocusEffect } from 'expo-router';
 import { useCallback, useState } from 'react';
-import { Pressable, StyleSheet, Text } from 'react-native';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { CatAvatar } from '../../src/components/CatAvatar';
 import { OriginalAlbum } from '../../src/components/OriginalAlbum';
 import { Screen } from '../../src/components/Screen';
 import { Segmented } from '../../src/components/Segmented';
@@ -28,9 +29,14 @@ export default function Tickets() {
       title="내 티켓"
       subtitle="모아둔 관람 기록"
       header={
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+        <Pressable onPress={() => router.push('/avatar')} accessibilityLabel="아바타 꾸미기">
+          <CatAvatar size={44} />
+        </Pressable>
         <Pressable onPress={() => router.push('/capture')} style={styles.add} accessibilityLabel="티켓 추가">
           <Text style={styles.addText}>+</Text>
         </Pressable>
+        </View>
       }
     >
       <Segmented<Mode> options={[{ key: 'cards', label: '카드' }, { key: 'originals', label: '원본 앨범' }]} value={mode} onChange={setMode} />
