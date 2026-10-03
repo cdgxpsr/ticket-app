@@ -1,4 +1,6 @@
-import { router } from 'expo-router';
+import { router, useFocusEffect } from 'expo-router';
+import { useCallback, useState } from 'react';
+import { repo } from '../../src/data';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { CatAvatar } from '../../src/components/CatAvatar';
 import { Screen } from '../../src/components/Screen';
@@ -10,12 +12,22 @@ const SETTINGS = [
 ];
 
 export default function More() {
+  const [stamps, setStamps] = useState(0);
+  useFocusEffect(useCallback(() => void repo.getStamps().then(setStamps), []));
   return (
     <Screen title="더보기" header={<Pressable onPress={() => router.push('/avatar')} accessibilityLabel="아바타 꾸미기"><CatAvatar size={56} /></Pressable>}>
       <View style={styles.group}>
         <Pressable style={styles.row} onPress={() => router.push('/avatar')}>
           <Text style={styles.label}>내 고양이 꾸미기</Text>
           <Text style={styles.value}>아바타</Text>
+        </Pressable>
+        <View style={[styles.row, styles.divider]}>
+          <Text style={styles.label}>모은 발도장</Text>
+          <Text style={styles.value}>{stamps}개</Text>
+        </View>
+        <Pressable style={[styles.row, styles.divider]} onPress={() => router.push('/friends')}>
+          <Text style={styles.label}>친구</Text>
+          <Text style={styles.value}>목록 · 코드로 추가</Text>
         </Pressable>
         <Pressable style={[styles.row, styles.divider]} onPress={() => router.push('/invite')}>
           <Text style={styles.label}>친구 초대</Text>

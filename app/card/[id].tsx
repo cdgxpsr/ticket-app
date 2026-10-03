@@ -70,6 +70,9 @@ export default function CardDetail() {
           <Pressable onPress={shareStory} style={[styles.btn, styles.primary]} disabled={busy}>
             <Text style={[styles.btnText, { color: colors.bg }]}>공유하기</Text>
           </Pressable>
+          <Pressable onPress={() => router.push(`/review/${card.id}`)} style={styles.btn}>
+            <Text style={styles.btnText}>후기 쓰기</Text>
+          </Pressable>
           <Pressable onPress={saveStory} style={styles.btn} disabled={busy}>
             <Text style={styles.btnText}>이미지 저장</Text>
           </Pressable>

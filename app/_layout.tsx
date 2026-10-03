@@ -2,6 +2,7 @@ import { useFonts } from 'expo-font';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { View } from 'react-native';
+import { ToastHost } from '../src/components/Social';
 import { colors } from '../src/theme';
 
 export default function RootLayout() {
@@ -15,6 +16,7 @@ export default function RootLayout() {
     <>
       <StatusBar style="light" />
       <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: colors.bg } }} />
+      <ToastHost />
     </>
   );
 }
