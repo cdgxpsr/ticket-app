@@ -1,0 +1,20 @@
+{
+  "expo": {
+    "name": "냥수첩",
+    "slug": "nyangsucheop",
+    "scheme": "nyangsucheop",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "dark",
+    "backgroundColor": "#16131C",
+    "splash": { "image": "./assets/splash-icon.png", "resizeMode": "contain", "backgroundColor": "#16131C" },
+    "ios": { "bundleIdentifier": "com.nyangsucheop.app", "supportsTablet": false },
+    "android": { "package": "com.nyangsucheop.app" },
+    "plugins": [
+      "expo-router",
+      ["expo-font", { "fonts": ["./assets/fonts/Pretendard-Regular.otf", "./assets/fonts/Pretendard-SemiBold.otf", "./assets/fonts/Pretendard-Bold.otf"] }],
+      "expo-status-bar"
+    ]
+  }
+}
