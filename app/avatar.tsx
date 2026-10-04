@@ -1,54 +1,34 @@
 import { router } from 'expo-router';
-import { useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { AvatarOptions, BACKS, BGS, BODIES, COATS, EXPRS, FACES } from '../src/avatar/cat';
 import { CatAvatar } from '../src/components/CatAvatar';
-import { getAvatar, saveAvatar } from '../src/lib/avatar';
-import { listCards } from '../src/lib/cards';
+import { getAvatar, getUnlockedItems, saveAvatar } from '../src/lib/avatar';
+import { CATALOG, isOwned } from '../src/lib/shop';
 import { colors, fonts } from '../src/theme';
 
 type Key = keyof AvatarOptions;
-type Item = { value: string; label: string; need?: number };
+type Item = { value: string; label: string };
 
-// Items unlock by registered ticket count: a reward for activity.
-const CATEGORIES: { key: Key; label: string; items: Item[] }[] = [
-  { key: 'coat', label: '털색', items: [
-    { value: 'cheese', label: '치즈' }, { value: 'white', label: '흰냥' }, { value: 'black', label: '까망' },
-    { value: 'gray', label: '회색' }, { value: 'calico', label: '삼색', need: 3 },
-  ] },
-  { key: 'expr', label: '표정', items: [
-    { value: 'happy', label: '해맑음' }, { value: 'derp', label: '메롱' }, { value: 'deadpan', label: '무념무상' },
-    { value: 'smug', label: '흐뭇' }, { value: 'sparkle', label: '초롱초롱', need: 3 },
-  ] },
-  { key: 'face', label: '얼굴', items: [
-    { value: 'none', label: '없음' }, { value: 'beret', label: '베레모' }, { value: 'glasses', label: '안경' },
-    { value: 'flower', label: '꽃', need: 1 }, { value: 'shades', label: '선글라스', need: 3 }, { value: 'crown', label: '왕관', need: 10 },
-  ] },
-  { key: 'body', label: '몸', items: [
-    { value: 'none', label: '없음' }, { value: 'scarf', label: '목도리' }, { value: 'bowtie', label: '나비넥타이' },
-    { value: 'ticketbag', label: '티켓 가방', need: 5 },
-  ] },
-  { key: 'back', label: '등', items: [
-    { value: 'none', label: '없음' }, { value: 'balloon', label: '풍선', need: 1 }, { value: 'cape', label: '망토', need: 5 },
-    { value: 'wings', label: '날개', need: 10 },
-  ] },
-  { key: 'bg', label: '배경', items: [
-    { value: 'none', label: '없음' }, { value: 'stage', label: '무대', need: 1 }, { value: 'museum', label: '미술관', need: 3 },
-    { value: 'paris', label: '파리', need: 5 }, { value: 'night', label: '밤하늘', need: 10 },
-  ] },
-];
+const LABELS: Record<string, string> = {
+  cheese: '치즈', white: '흰냥', black: '까망', gray: '회색', happy: '해맑음', derp: '메롱', deadpan: '무념무상', smug: '흐뭇',
+  none: '없음', beret: '베레모', glasses: '안경', scarf: '목도리', bowtie: '나비넥타이',
+};
+const SLOT_LABEL: Record<Key, string> = { coat: '털색', expr: '표정', face: '얼굴', body: '몸', back: '등', bg: '배경' };
+const label = (k: Key, v: string) => CATALOG.find((i) => i.slot === k && i.value === v)?.label ?? LABELS[v] ?? v;
 
 // Option lists from cat.ts; items not in these lists are hidden.
 const ALL: Record<Key, readonly string[]> = { coat: COATS, expr: EXPRS, face: FACES, body: BODIES, back: BACKS, bg: BGS };
+const CATEGORIES = (Object.keys(SLOT_LABEL) as Key[]).map((key) => ({ key, label: SLOT_LABEL[key] }));
 
 export default function AvatarScreen() {
   const [draft, setDraft] = useState<AvatarOptions>(getAvatar);
   const [tab, setTab] = useState<Key>('coat');
   const [hint, setHint] = useState<string | null>(null);
-  const count = useMemo(() => listCards().length, []);
-  const cat = CATEGORIES.find((c) => c.key === tab)!;
-  const items = cat.items.filter((i) => ALL[tab].includes(i.value));
+  const [unlocked, setUnlocked] = useState<string[]>([]);
+  useEffect(() => void getUnlockedItems().then(setUnlocked).catch(() => {}), []);
+  const items: Item[] = ALL[tab].map((value) => ({ value, label: label(tab, value) }));
 
   const save = () => {
     saveAvatar(draft);
@@ -70,21 +50,21 @@ export default function AvatarScreen() {
           </Pressable>
         ))}
       </ScrollView>
-      <Text style={styles.hint}>{hint ?? `등록한 티켓 ${count}장`}</Text>
+      <Text style={styles.hint}>{hint ?? '잠긴 아이템은 냥냥상점에서 츄르로 살 수 있어요'}</Text>
       <ScrollView contentContainerStyle={styles.grid}>
         {items.map((it) => {
-          const locked = (it.need ?? 0) > count;
+          const locked = !isOwned(tab, it.value, unlocked);
           const on = draft[tab] === it.value;
           return (
             <Pressable
               key={it.value}
               style={[styles.cell, on && styles.cellOn]}
-              onPress={() => (locked ? setHint(`티켓 ${it.need}장 등록하면 열려요`) : (setHint(null), setDraft({ ...draft, [tab]: it.value })))}
+              onPress={() => (locked ? setHint(`${it.label}은(는) 냥냥상점에서 살 수 있어요`) : (setHint(null), setDraft({ ...draft, [tab]: it.value })))}
               accessibilityLabel={locked ? `${it.label}, 잠김` : it.label}
             >
               <View style={locked && styles.dim}><CatAvatar size={76} avatar={{ ...draft, [tab]: it.value }} /></View>
               <Text style={styles.cellLabel} numberOfLines={1}>{it.label}</Text>
-              {locked ? <Text style={styles.lock}>잠김 · 티켓 {it.need}장</Text> : null}
+              {locked ? <Text style={styles.lock}>상점에서 구매</Text> : null}
             </Pressable>
           );
         })}

@@ -5,7 +5,7 @@ import { colors, fonts } from '../../src/theme';
 type IconProps = { color: string };
 const s = { fill: 'none', strokeWidth: 2, strokeLinecap: 'round', strokeLinejoin: 'round' } as const;
 const icons: Record<string, (p: IconProps) => React.ReactElement> = {
-  feed: ({ color }) => (<Svg width={24} height={24} viewBox="0 0 24 24"><Path d="M4 11l8-7 8 7v9H4z" stroke={color} {...s} /></Svg>),
+  shop: ({ color }) => (<Svg width={24} height={24} viewBox="0 0 24 24"><Path d="M5 8h14l-1 12H6z" stroke={color} {...s} /><Path d="M9 8a3 3 0 016 0" stroke={color} {...s} /></Svg>),
   explore: ({ color }) => (<Svg width={24} height={24} viewBox="0 0 24 24"><Circle cx={11} cy={11} r={7} stroke={color} {...s} /><Path d="M20 20l-4-4" stroke={color} {...s} /></Svg>),
   community: ({ color }) => (<Svg width={24} height={24} viewBox="0 0 24 24"><Path d="M4 5h16v11H9l-5 4z" stroke={color} {...s} /></Svg>),
   tickets: ({ color }) => (<Svg width={24} height={24} viewBox="0 0 24 24"><Path d="M3 7h18v3a2 2 0 000 4v3H3v-3a2 2 0 000-4z" stroke={color} {...s} /></Svg>),
@@ -14,9 +14,9 @@ const icons: Record<string, (p: IconProps) => React.ReactElement> = {
 
 const tabs = [
   { name: 'index', title: '둘러보기', icon: 'explore' },
-  { name: 'feed', title: '피드', icon: 'feed' },
   { name: 'community', title: '커뮤니티', icon: 'community' },
   { name: 'tickets', title: '내 티켓', icon: 'tickets' },
+  { name: 'shop', title: '냥냥상점', icon: 'shop' },
   { name: 'more', title: '더보기', icon: 'more' },
 ];
 

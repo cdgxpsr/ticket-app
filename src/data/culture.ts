@@ -83,7 +83,7 @@ export async function getCultureEvents(region: string, category: string): Promis
   if (category !== '영화') {
     try {
       let q = supabase.from('culture_events').select(COLS).neq('category', '영화').order('start_date', { ascending: false, nullsFirst: false }).limit(200);
-      if (region !== '전국') q = q.eq('region', region);
+      if (region !== '전국') q = q.eq('region', region).limit(600);
       if (category !== '전체') q = q.eq('category', category);
       const { data, error } = await q;
       if (error) throw error;
@@ -115,3 +115,47 @@ export const formatPeriod = (e: CultureEvent) => {
   if (e.start_date && e.end_date && e.start_date !== e.end_date) return `${f(e.start_date)} ~ ${f(e.end_date)}`;
   return f(e.start_date ?? e.end_date) || '상시';
 };
+
+/** 시군구 from an address ("서울 송파구 …", "서울특별시 송파구 …"); 세종 has none. */
+export function districtOf(e: CultureEvent): string | null {
+  const parts = (e.address ?? '').trim().split(/\s+/);
+  const d = parts[1];
+  return d && /(시|군|구)$/.test(d) ? d : null;
+}
+
+/** Image list for the detail pager: cached extras from event-images, else just the main image. */
+export async function getEventImages(e: CultureEvent): Promise<string[]> {
+  const main = httpsUrl(e.image_url);
+  const fallback = main ? [main] : [];
+  if (!/^(tour|kopis):/.test(e.id)) return fallback;
+  try {
+    await ensureSession();
+    const { data, error } = await supabase.functions.invoke<{ images: string[] }>('event-images', { method: 'POST', body: { id: e.id } });
+    if (error || !data?.images?.length) return fallback;
+    return data.images;
+  } catch {
+    return fallback;
+  }
+}
+
+export type EventReview = { id: string; author: string; rating: number; text: string; created_at: string; nickname: string; mine: boolean };
+
+export async function getEventReviews(eventId: string): Promise<EventReview[]> {
+  try {
+    const me = (await ensureSession()).user.id;
+    const { data, error } = await supabase.from('event_reviews').select('id, author, rating, text, created_at').eq('event_id', eventId)
+      .order('created_at', { ascending: false }).limit(100);
+    if (error || !data?.length) return [];
+    const ids = [...new Set(data.map((r) => r.author as string))];
+    const { data: profs } = await supabase.from('profiles').select('id, nickname').in('id', ids);
+    const nick = new Map((profs ?? []).map((p) => [p.id as string, p.nickname as string]));
+    return data.map((r) => ({ ...(r as Omit<EventReview, 'nickname' | 'mine'>), nickname: nick.get(r.author as string) ?? '냥이', mine: r.author === me }));
+  } catch {
+    return [];
+  }
+}
+
+export async function saveEventReview(eventId: string, rating: number, text: string): Promise<boolean> {
+  const { error } = await supabase.from('event_reviews').upsert({ event_id: eventId, rating, text: text.trim() }, { onConflict: 'event_id,author' });
+  return !error;
+}
