@@ -252,6 +252,18 @@ Deno.serve(async (req) => {
   const okRole = role && req.headers.get('authorization') === `Bearer ${role}`;
   if (!okSecret && !okRole) return json({ error: 'unauthorized' }, 401);
 
+  // Runs in the background: the full sync can take minutes, longer than the caller (dashboard Test, cron) waits.
+  // Result appears in the function Logs as "sync done {...}".
+  // deno-lint-ignore no-explicit-any
+  const rt = (globalThis as any).EdgeRuntime;
+  if (rt?.waitUntil) {
+    rt.waitUntil(sync().catch((e) => console.error('sync failed', e)));
+    return json({ ok: true, started: true, note: '백그라운드에서 갱신 중 · Logs에서 sync done 확인' }, 202);
+  }
+  return json({ ok: true, counts: await sync() });
+});
+
+async function sync() {
   const counts: Record<string, number | string> = {};
   const run = async (name: string, keyName: string, fn: (key: string) => Promise<Row[]>) => {
     const key = env(keyName);
@@ -269,5 +281,7 @@ Deno.serve(async (req) => {
     } catch (e) { counts.tour = `error: ${(e as Error).message}`; }
   } else counts.tour = 'skipped (no key)';
   try { await purge(); counts.purged = 'ok'; } catch (e) { counts.purged = `error: ${(e as Error).message}`; }
-  return json({ ok: true, counts });
-});
+  console.log('sync done', JSON.stringify(counts));
+  return counts;
+}
+
