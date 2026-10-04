@@ -1,7 +1,7 @@
 import { ensureSession, supabase } from '../lib/supabase';
 
 export const KOBIS_CREDIT = '출처: 영화관입장권통합전산망(KOBIS)';
-export const TMDB_CREDIT = 'This product uses the TMDB API but is not endorsed or certified by TMDB.';
+export const KMDB_CREDIT = '포스터: 한국영상자료원 KMDb';
 /** iOS ATS blocks http:// images; existing rows may still hold http URLs. */
 export const httpsUrl = (u: string | null | undefined) => (u ? u.replace(/^http:\/\//i, 'https://') : null);
 
@@ -13,7 +13,7 @@ export type CultureEvent = {
   venue: string | null; region: string; address: string | null; start_date: string | null; end_date: string | null;
   link_url: string | null; lat: number | null; lng: number | null;
   booking_links?: { name: string; url: string }[] | null;
-  poster_source?: 'tmdb' | null;
+  poster_source?: 'kmdb' | null;
 };
 
 const COLS = 'id, source, category, title, summary, image_url, venue, region, address, start_date, end_date, link_url, lat, lng, booking_links';

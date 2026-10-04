@@ -2,7 +2,7 @@ import { router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { ActivityIndicator, Image, Linking, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { KOBIS_CREDIT, TMDB_CREDIT, httpsUrl, formatPeriod, getNearbyStays, getCultureEvent, type CultureEvent } from '../../src/data/culture';
+import { KOBIS_CREDIT, KMDB_CREDIT, httpsUrl, formatPeriod, getNearbyStays, getCultureEvent, type CultureEvent } from '../../src/data/culture';
 import { colors, fonts } from '../../src/theme';
 
 const naver = (q: string) => `https://m.search.naver.com/search.naver?query=${encodeURIComponent(q.trim())}`;
@@ -68,7 +68,7 @@ export default function EventDetail() {
               </Pressable>
             ))}
             {ev.category === '영화' && <Text style={styles.credit}>{KOBIS_CREDIT}</Text>}
-            {ev.poster_source === 'tmdb' && <Text style={styles.credit}>{TMDB_CREDIT}</Text>}
+            {ev.poster_source === 'kmdb' && <Text style={styles.credit}>{KMDB_CREDIT}</Text>}
           </View>
           <View style={{ alignItems: 'center', gap: 6 }}>
             <Pressable style={styles.recordBtn} onPress={() => router.push('/capture')}>

@@ -78,11 +78,11 @@ Apple은 `signInWithIdToken`이 익명 계정에 연결되지 않아 새 계정�
 ### 2. 마이그레이션
 `npx supabase db push` (또는 SQL Editor에서 `migrations/20261004000000_culture_events.sql`, `migrations/20261004010000_booking_links.sql`을 순서대로 실행). 공연은 KOPIS 상세 API의 예매처(`booking_links`)를 저장하며, 한 번에 최대 150건씩 새 공연만 조회해요.
 
-선택: **TMDB_KEY**(https://www.themoviedb.org/settings/api, v3 키 또는 읽기 토큰)를 설정하면 `movies-live`가 영화 포스터를 붙여요(앱에 TMDB 고지 표시).
+선택: **KMDB_KEY**(한국영상자료원 KMDb https://www.kmdb.or.kr → 오픈API 신청)를 설정하면 `movies-live`가 영화 포스터를 붙여요(앱에 '포스터: 한국영상자료원 KMDb' 표기, 10분 캐시).
 
 ### 3. 시크릿 설정 & 함수 배포
 ```bash
-npx supabase secrets set KOBIS_KEY=... KOPIS_KEY=... TMDB_KEY=... TOUR_API_KEY=... SYNC_SECRET=$(openssl rand -hex 24)
+npx supabase secrets set KOBIS_KEY=... KOPIS_KEY=... KMDB_KEY=... TOUR_API_KEY=... SYNC_SECRET=$(openssl rand -hex 24)
 npx supabase functions deploy sync-culture --no-verify-jwt
 npx supabase functions deploy movies-live   # JWT 검증 사용(앱 세션으로 호출)
 # 수동 실행 테스트

@@ -6,7 +6,7 @@ import Svg, { Circle, Path } from 'react-native-svg';
 import { Screen } from '../../src/components/Screen';
 import { Chip } from '../../src/components/Social';
 import { repo, type Explore as ExploreData } from '../../src/data';
-import { CULTURE_CATEGORIES, KOBIS_CREDIT, REGIONS, TMDB_CREDIT, httpsUrl, formatPeriod, getCultureEvents, type CultureEvent } from '../../src/data/culture';
+import { CULTURE_CATEGORIES, KOBIS_CREDIT, REGIONS, KMDB_CREDIT, httpsUrl, formatPeriod, getCultureEvents, type CultureEvent } from '../../src/data/culture';
 import { colors, fonts } from '../../src/theme';
 
 const REGION_KEY = 'explore.region';
@@ -89,7 +89,7 @@ export default function Explore() {
             </Pressable>
           ))}
           {shown.some((e) => e.category === '영화') && <Text style={styles.credit}>{KOBIS_CREDIT}</Text>}
-          {shown.some((e) => e.poster_source === 'tmdb') && <Text style={styles.credit}>{TMDB_CREDIT}</Text>}
+          {shown.some((e) => e.poster_source === 'kmdb') && <Text style={styles.credit}>{KMDB_CREDIT}</Text>}
         </View>
       )}
       <Text style={[styles.section, { marginTop: 10 }]}>냥냥 기록 둘러보기</Text>
