@@ -5,7 +5,16 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { KOBIS_CREDIT, KMDB_CREDIT, httpsUrl, formatPeriod, getNearbyStays, getCultureEvent, type CultureEvent } from '../../src/data/culture';
 import { colors, fonts } from '../../src/theme';
 
-const naver = (q: string) => `https://m.search.naver.com/search.naver?query=${encodeURIComponent(q.trim())}`;
+const APP = 'com.nyangsucheop.app';
+type Btn = { name: string; url: string; fallback?: string };
+/** Opens the Naver Map app (place page has 예약); universal-link fallback opens the app or web. */
+function naverMap(e: CultureEvent, query: string): Btn {
+  const q = encodeURIComponent(query.trim());
+  const url = e.lat != null && e.lng != null
+    ? `nmap://place?lat=${e.lat}&lng=${e.lng}&name=${encodeURIComponent(e.title)}&appname=${APP}`
+    : `nmap://search?query=${q}&appname=${APP}`;
+  return { name: '네이버 지도에서 예약', url, fallback: `https://map.naver.com/p/search/${q}` };
+}
 // Chain mobile booking homes; title-search URL formats are not stable/documented, so we open booking home.
 const CINEMAS = [
   { name: 'CGV', url: 'https://m.cgv.co.kr/' },
@@ -13,15 +22,16 @@ const CINEMAS = [
   { name: '롯데시네마', url: 'https://www.lottecinema.co.kr/NLCMW/' },
 ];
 
-function bookingButtons(e: CultureEvent): { name: string; url: string }[] {
+function bookingButtons(e: CultureEvent): Btn[] {
   if (e.category === '영화') return CINEMAS;
-  if (e.category === '숙박') return [{ name: '네이버 예약 보기', url: naver(`${e.title} 숙소`) }];
+  if (e.category === '숙박') return [naverMap(e, `${e.title} ${e.region === '전국' ? '' : e.region}`)];
   const links = (e.booking_links ?? []).filter((l) => l?.name && /^https?:\/\//.test(l.url));
   if (links.length) return links.map((l) => ({ name: l.name, url: httpsUrl(l.url)! }));
-  return [{ name: '네이버에서 예약 찾기', url: naver(`${e.title} ${e.venue || e.region}`) }];
+  return [naverMap(e, `${e.title} ${e.venue || e.region}`)];
 }
 // 예매는 외부 앱/사파리로 연다. https 링크는 CGV·인터파크 등 앱이 설치돼 있으면 그 앱으로 바로 열린다(유니버설 링크).
-const open = (url: string) => Linking.openURL(url).catch(() => {});
+const open = (url: string, fallback?: string) =>
+  Linking.openURL(url).catch(() => (fallback ? Linking.openURL(fallback).catch(() => {}) : undefined));
 
 export default function EventDetail() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -63,7 +73,7 @@ export default function EventDetail() {
           <View style={{ gap: 10 }}>
             <Text style={styles.section}>{ev.category === '영화' ? '영화관에서 예매하기' : '예매·예약'}</Text>
             {bookingButtons(ev).map((b, i) => (
-              <Pressable key={b.name + i} style={[styles.btn, i === 0 && styles.primary]} onPress={() => open(b.url)}>
+              <Pressable key={b.name + i} style={[styles.btn, i === 0 && styles.primary]} onPress={() => open(b.url, b.fallback)}>
                 <Text style={[styles.btnText, i === 0 && { color: colors.bg }]}>{b.name}</Text>
               </Pressable>
             ))}
