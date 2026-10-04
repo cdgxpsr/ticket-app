@@ -1,3 +1,4 @@
+import { listSaved } from '../lib/saved';
 import { ensureSession, supabase } from '../lib/supabase';
 
 export const KOBIS_CREDIT = '출처: 영화관입장권통합전산망(KOBIS)';
@@ -103,10 +104,11 @@ export async function getCultureEvent(id: string): Promise<CultureEvent | undefi
   if (s) return s;
   try {
     const { data } = await supabase.from('culture_events').select(COLS).eq('id', id).maybeSingle();
-    return (data as CultureEvent | null) ?? undefined;
+    if (data) return data as CultureEvent;
   } catch {
-    return undefined;
+    // offline: fall through to saved snapshot
   }
+  return (await listSaved()).find((e) => e.id === id);
 }
 
 export const formatPeriod = (e: CultureEvent) => {
@@ -196,4 +198,33 @@ export function curate(events: CultureEvent[], interests: string[]): CultureEven
     if (i > events.length) break;
   }
   return out;
+}
+
+export const DATE_RANGES = ['전체', '오늘', '이번 주말', '이번 주', '이번 달', '다음 달'] as const;
+export type DateRange = (typeof DATE_RANGES)[number];
+
+const ymdLocal = (d: Date) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+
+/** [from, to] (inclusive, YYYY-MM-DD) for a range, in the phone's local time. */
+export function rangeDates(r: DateRange, now = new Date()): [string, string] | null {
+  const d = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const day = d.getDay(); // 0 Sun
+  const add = (n: number) => new Date(d.getFullYear(), d.getMonth(), d.getDate() + n);
+  switch (r) {
+    case '오늘': return [ymdLocal(d), ymdLocal(d)];
+    case '이번 주말': return day === 0 ? [ymdLocal(d), ymdLocal(d)] : [ymdLocal(add(6 - day)), ymdLocal(add(7 - day))];
+    case '이번 주': return [ymdLocal(d), ymdLocal(add(day === 0 ? 0 : 7 - day))];
+    case '이번 달': return [ymdLocal(d), ymdLocal(new Date(d.getFullYear(), d.getMonth() + 1, 0))];
+    case '다음 달': return [ymdLocal(new Date(d.getFullYear(), d.getMonth() + 1, 1)), ymdLocal(new Date(d.getFullYear(), d.getMonth() + 2, 0))];
+    default: return null;
+  }
+}
+
+/** Overlap test: the event runs at some point inside the range. Undated (상시) events always match. */
+export function inRange(e: CultureEvent, r: DateRange): boolean {
+  const span = rangeDates(r);
+  if (!span) return true;
+  const start = e.start_date ?? '0000-01-01';
+  const end = e.end_date ?? e.start_date ?? '9999-12-31';
+  return start <= span[1] && end >= span[0];
 }

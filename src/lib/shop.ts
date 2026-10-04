@@ -68,7 +68,26 @@ export const CATALOG: ShopItem[] = [
   { slot: 'bg', value: 'concert', label: '콘서트', price: 450, tag: 'HOT' },
   { slot: 'bg', value: 'space', label: '우주', price: 600, tag: 'NEW' },
   { slot: 'coat', value: 'calico', label: '삼색 털', price: 300, need: 3 },
+  { slot: 'coat', value: 'cream', label: '크림', price: 150, tag: 'NEW' },
+  { slot: 'coat', value: 'brown', label: '갈색', price: 150, tag: 'NEW' },
+  { slot: 'coat', value: 'choco', label: '초코', price: 200, tag: 'NEW' },
+  { slot: 'coat', value: 'tuxedo', label: '턱시도', price: 250, tag: 'HOT' },
+  { slot: 'coat', value: 'siamese', label: '샴', price: 300, tag: 'NEW' },
+  { slot: 'coat', value: 'pink', label: '딸기우유', price: 350, tag: 'NEW' },
+  { slot: 'coat', value: 'mint', label: '민트', price: 350, tag: 'NEW' },
+  { slot: 'coat', value: 'lavender', label: '라벤더', price: 350, tag: 'NEW' },
+  { slot: 'coat', value: 'sky', label: '하늘', price: 350, tag: 'NEW' },
+  { slot: 'coat', value: 'lemon', label: '레몬', price: 350, tag: 'NEW' },
+  { slot: 'coat', value: 'gold', label: '황금냥', price: 1000, tag: '한정' },
   { slot: 'expr', value: 'sparkle', label: '초롱초롱', price: 200, need: 3 },
+  { slot: 'expr', value: 'wink', label: '윙크', price: 100, tag: 'NEW' },
+  { slot: 'expr', value: 'tongue', label: '메롱메롱', price: 100, tag: 'NEW' },
+  { slot: 'expr', value: 'sleepy', label: '졸림', price: 150, tag: 'NEW' },
+  { slot: 'expr', value: 'surprised', label: '깜짝', price: 150, tag: 'NEW' },
+  { slot: 'expr', value: 'angry', label: '버럭', price: 150, tag: 'NEW' },
+  { slot: 'expr', value: 'cry', label: '눈물', price: 150, tag: 'NEW' },
+  { slot: 'expr', value: 'love', label: '하트 눈', price: 250, tag: 'HOT' },
+  { slot: 'expr', value: 'starry', label: '별 눈', price: 300, tag: 'NEW' },
 ];
 
 type State = { owned: string[]; spent: number; bonus: number; lastDaily?: string; rewarded: string[] };
@@ -133,3 +152,11 @@ export function buy(item: ShopItem): 'ok' | 'owned' | 'poor' {
   save(s);
   return 'ok';
 }
+
+/** 츄르 charge packages shown in the shop. Real payment (App Store in-app purchase) is not connected yet. */
+export const CHURU_PACKS = [
+  { amount: 300, price: '₩1,200' },
+  { amount: 1000, bonus: 100, price: '₩3,900' },
+  { amount: 3000, bonus: 500, price: '₩11,000' },
+  { amount: 6000, bonus: 1500, price: '₩22,000', tag: 'BEST' },
+];

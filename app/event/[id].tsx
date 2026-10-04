@@ -1,9 +1,11 @@
 import { router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { ActivityIndicator, Alert, Image, Pressable, ScrollView, StyleSheet, Text, TextInput, useWindowDimensions, View } from 'react-native';
+import { ActivityIndicator, Alert, Share, Image, Pressable, ScrollView, StyleSheet, Text, TextInput, useWindowDimensions, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { KOBIS_CREDIT, KMDB_CREDIT, httpsUrl, formatPeriod, getNearbyStays, getCultureEvent, getEventImages, getEventReviews, saveEventReview, type CultureEvent, type EventReview } from '../../src/data/culture';
 import { requireAccount } from '../../src/lib/auth';
+import { isSaved, toggleSaved } from '../../src/lib/saved';
+import Svg, { Path } from 'react-native-svg';
 import { addChur } from '../../src/lib/shop';
 import { openVendor, vendorsFor } from '../../src/lib/booking';
 import { colors, fonts } from '../../src/theme';
@@ -18,6 +20,14 @@ export default function EventDetail() {
   const [rating, setRating] = useState(0);
   const [text, setText] = useState('');
   const [saving, setSaving] = useState(false);
+  const [saved, setSaved] = useState(false);
+  useEffect(() => void isSaved(String(id)).then(setSaved), [id]);
+  const onSave = async () => { if (ev) setSaved(await toggleSaved(ev)); };
+  const onShare = () => {
+    if (!ev) return;
+    const lines = [`[냥냥수첩] ${ev.title}`, `${ev.category} · ${formatPeriod(ev)}`, ev.venue || ev.address, ev.link_url].filter(Boolean);
+    Share.share({ message: lines.join('\n') }).catch(() => {});
+  };
   const { width } = useWindowDimensions();
   const heroW = width - 40;
   const heroH = Math.round((heroW * 4) / 3);
@@ -60,7 +70,14 @@ export default function EventDetail() {
       <View style={styles.top}>
         <Pressable onPress={() => (router.canGoBack() ? router.back() : router.replace('/'))}><Text style={styles.link}>닫기</Text></Pressable>
         <Text style={styles.title}>문화 소식</Text>
-        <View style={{ width: 32 }} />
+        <View style={{ flexDirection: 'row', gap: 16 }}>
+          <Pressable onPress={onSave} hitSlop={8} accessibilityLabel={saved ? '저장 취소' : '저장'}>
+            <Svg width={24} height={24} viewBox="0 0 24 24"><Path d="M12 20s-7-4.4-7-10a4 4 0 017-2.6A4 4 0 0119 10c0 5.6-7 10-7 10z" fill={saved ? '#FF6B8B' : 'none'} stroke={saved ? '#FF6B8B' : colors.text} strokeWidth={1.8} strokeLinejoin="round" /></Svg>
+          </Pressable>
+          <Pressable onPress={onShare} hitSlop={8} accessibilityLabel="공유">
+            <Svg width={24} height={24} viewBox="0 0 24 24"><Path d="M12 3v12M7 8l5-5 5 5M5 13v6h14v-6" fill="none" stroke={colors.text} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" /></Svg>
+          </Pressable>
+        </View>
       </View>
       {ev === undefined ? (
         <ActivityIndicator color={colors.accent} style={{ marginTop: 40 }} />
