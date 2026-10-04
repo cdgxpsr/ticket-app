@@ -5,3 +5,9 @@ enable_anonymous_sign_ins = true
 
 [functions.recognize]
 verify_jwt = true
+
+[functions.sync-culture]
+verify_jwt = false
+
+[functions.movies-live]
+verify_jwt = true

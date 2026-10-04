@@ -65,3 +65,28 @@ Apple은 `signInWithIdToken`이 익명 계정에 연결되지 않아 새 계정�
 ### 4. 마이그레이션
 `20261003010000_merge_anonymous.sql`이 적용돼야 Apple 로그인 시 익명 데이터가 옮겨져요 (`npx supabase db push`).
 제약: 호출자가 방금(10분 이내) 로그인한 비익명 사용자이고 `old_uid`가 익명 사용자일 때만 동작하며, 이전 익명 계정은 삭제돼요.
+
+## 지역별 문화거리 (culture_events 동기화)
+
+`sync-culture` 엣지 함수가 매일 새벽 4시(KST) 아래 공공 API에서 공연·전시·축제·액티비티·숙박(KorService2 `searchStay2`, 시도별)을 가져와 `public.culture_events`에 저장해요. 영화는 KOBIS 이용약관상 저장하지 않고 `movies-live` 함수가 실시간으로 조회해요(메모리 캐시 10분, 앱에 '출처: 영화관입장권통합전산망(KOBIS)' 표기). 키가 없는 소스는 건너뛰고, 테이블이 비어 있으면 앱은 예시 데이터를 보여줘요.
+
+### 1. API 키 발급
+- **KOBIS_KEY** (영화 박스오피스, `movies-live`에서 실시간 조회만): https://www.kobis.or.kr/kobisopenapi → 회원가입 → 키 발급/관리 → **오픈API 키 발급**.
+- **KOPIS_KEY** (공연): https://www.kopis.or.kr → 공연예술통합전산망 **오픈API 신청** → 승인 후 서비스키 확인.
+- **TOUR_API_KEY** (축제·전시·레포츠·숙박): https://www.data.go.kr → '**한국관광공사_국문 관광정보 서비스_GW**' 검색 → 활용신청 → 마이페이지에서 일반 인증키(**Decoding** 키 권장) 복사.
+
+### 2. 마이그레이션
+`npx supabase db push` (또는 SQL Editor에서 `migrations/20261004000000_culture_events.sql` 실행).
+
+### 3. 시크릿 설정 & 함수 배포
+```bash
+npx supabase secrets set KOBIS_KEY=... KOPIS_KEY=... TOUR_API_KEY=... SYNC_SECRET=$(openssl rand -hex 24)
+npx supabase functions deploy sync-culture --no-verify-jwt
+npx supabase functions deploy movies-live   # JWT 검증 사용(앱 세션으로 호출)
+# 수동 실행 테스트
+curl -X POST https://dvrznqbtjwksthzqxnpq.supabase.co/functions/v1/sync-culture -H "x-sync-secret: <SYNC_SECRET>"
+```
+`SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`는 자동 제공돼요.
+
+### 4. 매일 자동 실행
+Dashboard → Database → Extensions에서 `pg_cron`, `pg_net`을 켠 뒤, 마이그레이션 파일 하단의 주석 처리된 `cron.schedule(...)` SQL을 `<SYNC_SECRET>`만 바꿔 SQL Editor에서 실행하세요 (UTC 19:00 = KST 04:00).
