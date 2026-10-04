@@ -178,9 +178,9 @@ const tourItems = (d: any): Record<string, string>[] => {
   const it = d?.response?.body?.items?.item;
   return Array.isArray(it) ? it : it ? [it] : [];
 };
-async function tourList(key: string, op: string, params: string) {
+async function tourList(key: string, op: string, params: string, maxPages = 5) {
   const all: Record<string, string>[] = [];
-  for (let page = 1; page <= 5; page++) {
+  for (let page = 1; page <= maxPages; page++) {
     const d = await getJson(`${TOUR}/${op}?serviceKey=${key}&MobileOS=ETC&MobileApp=nyangnyang&_type=json&numOfRows=100&pageNo=${page}&${params}`);
     const items = tourItems(d);
     all.push(...items);
@@ -209,7 +209,7 @@ async function tour(key: string): Promise<{ festivals: Row[]; leisure: Row[]; cu
     tourRow(i, EXHIBIT.test(i.title ?? '') ? '전시' : '축제', iso(i.eventstartdate), iso(i.eventenddate)));
   const lei = await tourList(k, 'areaBasedList2', 'contentTypeId=28&arrange=Q').catch((e) => { console.error('leisure', e); return []; });
   const leisure = lei.map((i) => tourRow(i, '액티비티', null, farEnd));
-  const cul = await tourList(k, 'areaBasedList2', 'contentTypeId=14&arrange=Q').catch((e) => { console.error('culture', e); return []; });
+  const cul = await tourList(k, 'areaBasedList2', 'contentTypeId=14&arrange=Q', 60).catch((e) => { console.error('culture', e); return []; });
   const culture = cul.filter((i) => EXHIBIT.test(i.title ?? '') || /미술관|박물관|갤러리|전시/.test(i.title ?? ''))
     .map((i) => tourRow(i, '전시', null, farEnd));
   const stays: Row[] = [];
