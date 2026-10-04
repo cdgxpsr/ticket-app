@@ -30,7 +30,7 @@ export default function Tickets() {
       subtitle="모아둔 관람 기록"
       header={
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
-        <Pressable onPress={() => router.push('/avatar')} accessibilityLabel="아바타 꾸미기">
+        <Pressable onPress={() => router.push({ pathname: '/shop', params: { tab: 'inv' } })} accessibilityLabel="아바타 꾸미기">
           <CatAvatar size={44} />
         </Pressable>
         <Pressable onPress={() => router.push('/capture')} style={styles.add} accessibilityLabel="티켓 추가">

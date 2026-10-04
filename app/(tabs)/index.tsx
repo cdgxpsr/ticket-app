@@ -1,10 +1,10 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { router } from 'expo-router';
 import { useEffect, useMemo, useState } from 'react';
-import { ActivityIndicator, Image, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { ActivityIndicator, Image, Modal, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import Svg, { Circle, Path, Rect } from 'react-native-svg';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { CULTURE_CATEGORIES, KOBIS_CREDIT, REGIONS, KMDB_CREDIT, httpsUrl, formatPeriod, getCultureEvents, districtOf, type CultureEvent } from '../../src/data/culture';
+import { CULTURE_CATEGORIES, KOBIS_CREDIT, REGIONS, KMDB_CREDIT, httpsUrl, formatPeriod, getCultureEvents, districtOf, curate, INTEREST_KEY, RECOMMEND, type CultureEvent } from '../../src/data/culture';
 import { colors, fonts } from '../../src/theme';
 
 const REGION_KEY = 'explore.region';
@@ -30,13 +30,32 @@ export default function Explore() {
   const [sample, setSample] = useState(false);
   const [district, setDistrict] = useState('전체');
   const [panel, setPanel] = useState<'region' | 'cat' | null>(null);
+  const [interests, setInterests] = useState<string[]>([]);
+  const [askInterests, setAskInterests] = useState(false);
+  const [pick, setPick] = useState<string[]>([]);
+  useEffect(() => {
+    AsyncStorage.getItem(INTEREST_KEY).then((v) => {
+      if (v == null) { setAskInterests(true); return; }
+      const list = JSON.parse(v) as string[];
+      setInterests(list);
+      if (list.length) setCcat(RECOMMEND);
+    }).catch(() => {});
+  }, []);
+  const saveInterests = (list: string[]) => {
+    setInterests(list);
+    setAskInterests(false);
+    setCcat(list.length ? RECOMMEND : '전체');
+    AsyncStorage.setItem(INTEREST_KEY, JSON.stringify(list)).catch(() => {});
+  };
+  const editInterests = () => { setPick(interests); setPanel(null); setAskInterests(true); };
   useEffect(() => {
     AsyncStorage.getItem(REGION_KEY).then((r) => r && (REGIONS as readonly string[]).includes(r) && setRegion(r)).catch(() => {});
   }, []);
   useEffect(() => {
     let alive = true;
     setEvents(undefined);
-    getCultureEvents(region, ccat).then((r) => {
+    const fetchCat = ccat === RECOMMEND ? '전체' : ccat;
+    getCultureEvents(region, fetchCat).then((r) => {
       if (!alive) return;
       setEvents(r.events);
       setSample(r.sample);
@@ -53,8 +72,10 @@ export default function Explore() {
     for (const e of events ?? []) { const d = districtOf(e); if (d) m.set(d, (m.get(d) ?? 0) + 1); }
     return [...m.entries()].sort((a, b) => a[0].localeCompare(b[0], 'ko'));
   }, [events]);
-  const shown = (events ?? []).filter((e) =>
-    (district === '전체' || districtOf(e) === district) && (!q.trim() || e.title.includes(q.trim()) || (e.venue ?? '').includes(q.trim())));
+  const filtered = (events ?? []).filter((e) =>
+    (district === '전체' || districtOf(e) === district) && (!q.trim() || e.title.includes(q.trim()) || (e.venue ?? '').includes(q.trim())) &&
+    (ccat !== RECOMMEND || !interests.length || interests.includes(e.category)));
+  const shown = ccat === RECOMMEND || ccat === '전체' ? curate(filtered, interests) : filtered;
 
 
   const total = shown.length;
@@ -71,7 +92,7 @@ export default function Explore() {
         <View style={styles.filterBar}>
           {(['region', 'cat'] as const).map((k, i) => {
             const on = panel === k;
-            const label = k === 'region' ? (district === '전체' ? region : `${region} ${district}`) : ccat === '전체' ? '종류 전체' : ccat;
+            const label = k === 'region' ? (district === '전체' ? region : `${region} ${district}`) : ccat === '전체' ? '종류 전체' : ccat === RECOMMEND ? '내 관심사' : ccat;
             return (
               <Pressable key={k} onPress={() => setPanel(on ? null : k)} style={[styles.filterBtn, i === 0 && styles.filterFirst, on && styles.filterOn]} accessibilityRole="button" accessibilityState={{ expanded: on }}>
                 <Text style={[styles.filterLabel, on && styles.filterLabelOn]} numberOfLines={1}>{label}</Text>
@@ -95,6 +116,8 @@ export default function Explore() {
             <ScrollView style={{ flex: 1 }} contentContainerStyle={styles.guWrap}>
               {region === '전국' ? (
                 <Text style={styles.muted}>← 지역을 선택해 주세요</Text>
+              ) : events && !districts.length ? (
+                <Text style={styles.muted}>구·시·군 정보가 아직 없어요. 다음 새벽 갱신 후 나와요</Text>
               ) : !events ? (
                 <ActivityIndicator color={colors.accent} />
               ) : (
@@ -113,6 +136,10 @@ export default function Explore() {
         )}
         {panel === 'cat' && (
           <View style={[styles.panel, styles.catPanel]}>
+            <Pressable onPress={() => (interests.length ? (setCcat(RECOMMEND), setPanel(null)) : editInterests())} style={[styles.recoRow, ccat === RECOMMEND && styles.catCellOn]}>
+              <Text style={[styles.catText, ccat === RECOMMEND && styles.sidoTextOn]}>내 관심사 추천{interests.length ? ` · ${interests.join(', ')}` : ''}</Text>
+              <Pressable onPress={editInterests} hitSlop={8}><Text style={styles.editLink}>{interests.length ? '수정' : '고르기'}</Text></Pressable>
+            </Pressable>
             {CULTURE_CATEGORIES.map((c) => {
               const on = c === ccat;
               const color = on ? colors.accent : '#9A90A8';
@@ -128,7 +155,7 @@ export default function Explore() {
       </View>
       <ScrollView style={{ flex: 1 }} contentContainerStyle={styles.main}>
         <View style={styles.listHead}>
-          <Text style={styles.listTitle}>{region}{district !== '전체' ? ` ${district}` : ''} · {catLabel}</Text>
+          <Text style={styles.listTitle}>{region}{district !== '전체' ? ` ${district}` : ''} · {ccat === RECOMMEND ? '추천' : catLabel}</Text>
           {!!events && <Text style={styles.count}>{total}</Text>}
         </View>
         {sample && <Text style={styles.note}>예시 정보를 보여주고 있어요 · 매일 새벽 최신 정보로 갱신돼요</Text>}
@@ -160,6 +187,29 @@ export default function Explore() {
           </View>
         )}
       </ScrollView>
+      <Modal visible={askInterests} transparent animationType="fade" onRequestClose={() => saveInterests(pick)}>
+        <View style={styles.backdrop}>
+          <View style={styles.sheet}>
+            <Text style={styles.sheetTitle}>어떤 문화생활을 좋아하세요?</Text>
+            <Text style={styles.muted}>골라 주시면 둘러보기를 취향대로 보여드려요. 언제든 바꿀 수 있어요.</Text>
+            <View style={styles.pickGrid}>
+              {CULTURE_CATEGORIES.filter((c) => c !== '전체').map((c) => {
+                const on = pick.includes(c);
+                return (
+                  <Pressable key={c} onPress={() => setPick((p) => (on ? p.filter((x) => x !== c) : [...p, c]))} style={[styles.catCell, styles.pickCell, on && styles.catCellOn]}>
+                    <Svg width={26} height={26} viewBox="0 0 24 24">{ICONS[c]?.(on ? colors.accent : '#9A90A8')}</Svg>
+                    <Text style={[styles.catText, on && styles.sidoTextOn]}>{c}</Text>
+                  </Pressable>
+                );
+              })}
+            </View>
+            <Pressable style={[styles.start, !pick.length && { opacity: 0.5 }]} disabled={!pick.length} onPress={() => saveInterests(pick)}>
+              <Text style={styles.startText}>{pick.length ? `${pick.length}개 선택 · 시작하기` : '하나 이상 골라 주세요'}</Text>
+            </Pressable>
+            <Pressable onPress={() => saveInterests([])} hitSlop={8}><Text style={[styles.muted, { textAlign: 'center' }]}>건너뛰기</Text></Pressable>
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 }
@@ -191,6 +241,15 @@ const styles = StyleSheet.create({
   catCell: { width: '30.5%', alignItems: 'center', gap: 6, paddingVertical: 14, borderRadius: 12, backgroundColor: colors.bg, borderWidth: 1, borderColor: 'transparent' },
   catCellOn: { borderColor: colors.accent },
   catText: { color: colors.text, fontFamily: fonts.regular, fontSize: 13 },
+  recoRow: { width: '100%', flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 12, paddingHorizontal: 14, borderRadius: 12, backgroundColor: colors.bg, borderWidth: 1, borderColor: 'transparent' },
+  editLink: { color: colors.accent, fontFamily: fonts.semibold, fontSize: 13 },
+  backdrop: { flex: 1, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'flex-end' },
+  sheet: { backgroundColor: colors.surface, borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 24, paddingBottom: 40, gap: 14 },
+  sheetTitle: { color: colors.text, fontFamily: fonts.bold, fontSize: 22, lineHeight: 30 },
+  pickGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+  pickCell: { backgroundColor: colors.bg },
+  start: { backgroundColor: colors.accent, borderRadius: 16, paddingVertical: 15, alignItems: 'center' },
+  startText: { color: colors.bg, fontFamily: fonts.bold, fontSize: 16 },
   main: { paddingHorizontal: 16, paddingTop: 4, paddingBottom: 40, gap: 12 },
   listHead: { flexDirection: 'row', alignItems: 'baseline', gap: 6 },
   listTitle: { color: colors.text, fontFamily: fonts.bold, fontSize: 17, letterSpacing: -0.4 },

@@ -1,10 +1,10 @@
 // Port of design generator cat.py: flat, outlined sitting cat built from layers.
 export const COATS = ['cheese', 'white', 'black', 'gray', 'calico'] as const;
 export const EXPRS = ['happy', 'derp', 'deadpan', 'smug', 'sparkle'] as const;
-export const FACES = ['none', 'beret', 'glasses', 'shades', 'crown', 'flower', 'tophat', 'ribbon', 'headphones', 'partyhat', 'halo', 'heartglasses', 'mustache'] as const;
-export const BODIES = ['none', 'scarf', 'bowtie', 'ticketbag', 'necklace', 'camera', 'popcorn', 'hanbok'] as const;
-export const BACKS = ['none', 'wings', 'cape', 'balloon', 'guitar', 'backpack', 'devilwings'] as const;
-export const BGS = ['none', 'stage', 'paris', 'museum', 'night', 'cinema', 'festival', 'sea', 'hanok'] as const;
+export const FACES = ['none', 'beret', 'glasses', 'shades', 'crown', 'flower', 'tophat', 'ribbon', 'headphones', 'partyhat', 'halo', 'heartglasses', 'mustache', 'cap', 'witchhat', 'bunnyears', 'santahat', 'monocle'] as const;
+export const BODIES = ['none', 'scarf', 'bowtie', 'ticketbag', 'necklace', 'camera', 'popcorn', 'hanbok', 'tie', 'lei', 'medal', 'bell'] as const;
+export const BACKS = ['none', 'wings', 'cape', 'balloon', 'guitar', 'backpack', 'devilwings', 'butterfly', 'rainbow'] as const;
+export const BGS = ['none', 'stage', 'paris', 'museum', 'night', 'cinema', 'festival', 'sea', 'hanok', 'concert', 'cherry', 'snow', 'space'] as const;
 
 export type Coat = (typeof COATS)[number];
 export type Expr = (typeof EXPRS)[number];
@@ -49,6 +49,14 @@ function background(kind: Bg): string {
       return '<rect width="200" height="200" fill="#CDEBFF"/><circle cx="160" cy="42" r="18" fill="#FFE07A"/><rect y="118" width="200" height="82" fill="#6EC1E4"/><path d="M0 130q12-8 24 0t24 0 24 0 24 0 24 0 24 0 24 0 24 0" stroke="#fff" stroke-width="4" fill="none"/><rect y="170" width="200" height="30" fill="#F7DFA8"/>';
     case 'hanok':
       return '<rect width="200" height="200" fill="#F6EAD7"/><path d="M-4 52q104-36 208 0l-8 16q-96-26-192 0z" fill="#4A3B32"/><rect x="18" y="66" width="164" height="8" fill="#8A5A3A"/><g fill="#A0714A"><rect x="26" y="74" width="8" height="110"/><rect x="166" y="74" width="8" height="110"/></g><rect y="180" width="200" height="20" fill="#D9C3A0"/>';
+    case 'concert':
+      return '<rect width="200" height="200" fill="#1E1630"/><path d="M30 0l30 200H0zM170 0l30 200h-60z" fill="#FFE9A8" opacity="0.18"/><path d="M100 0l26 200H74z" fill="#C9B8FF" opacity="0.18"/><g fill="#FF8DB8"><circle cx="20" cy="190" r="10"/><circle cx="50" cy="194" r="9"/><circle cx="150" cy="194" r="9"/><circle cx="180" cy="190" r="10"/></g>';
+    case 'cherry':
+      return '<rect width="200" height="200" fill="#FFF0F4"/><path d="M0 40q40-30 80-10M200 30q-40-20-70 6" stroke="#8A5A4A" stroke-width="5" fill="none"/><g fill="#FFB7CB"><circle cx="20" cy="30" r="9"/><circle cx="46" cy="22" r="8"/><circle cx="70" cy="30" r="9"/><circle cx="150" cy="26" r="9"/><circle cx="178" cy="22" r="8"/><circle cx="30" cy="120" r="4"/><circle cx="170" cy="100" r="4"/><circle cx="160" cy="150" r="3.5"/><circle cx="40" cy="160" r="3.5"/></g>';
+    case 'snow':
+      return '<rect width="200" height="200" fill="#DCEBFA"/><rect y="170" width="200" height="30" fill="#FFFFFF"/><g fill="#FFFFFF"><circle cx="20" cy="30" r="4"/><circle cx="60" cy="60" r="3"/><circle cx="160" cy="24" r="4"/><circle cx="180" cy="80" r="3"/><circle cx="30" cy="110" r="3.5"/><circle cx="172" cy="130" r="3.5"/><circle cx="110" cy="14" r="3"/></g>';
+    case 'space':
+      return '<rect width="200" height="200" fill="#141033"/><circle cx="160" cy="44" r="20" fill="#F2A65A"/><ellipse cx="160" cy="44" rx="32" ry="7" fill="none" stroke="#FFD9A8" stroke-width="3"/><g fill="#fff"><circle cx="30" cy="30" r="2"/><circle cx="80" cy="18" r="1.5"/><circle cx="20" cy="100" r="2"/><circle cx="182" cy="120" r="1.5"/><circle cx="40" cy="160" r="1.5"/></g>';
     default:
       return '';
   }
@@ -64,6 +72,12 @@ function backDeco(kind: Back): string {
     return `<path d="M140 130q14-40 10-74" stroke="${INK}" stroke-width="3" fill="none"/><ellipse cx="150" cy="40" rx="20" ry="24" fill="#FF8FA3" ${o()}/><ellipse cx="143" cy="32" rx="5" ry="8" fill="#fff" opacity="0.6"/>`;
   if (kind === 'guitar')
     return `<path d="M150 132l16-96" stroke="${INK}" stroke-width="12" stroke-linecap="round"/><path d="M150 132l16-96" stroke="#8A5A30" stroke-width="6" stroke-linecap="round"/><ellipse cx="148" cy="150" rx="22" ry="26" fill="#D9934E" ${o()}/><circle cx="148" cy="146" r="7" fill="${INK}"/>`;
+  if (kind === 'butterfly') {
+    const w = (d: string, c: string) => `<path d="${d}" fill="${c}" ${o('', 4)}/>`;
+    return w('M70 120c-30-30-50-20-46 0 4 16 26 18 46 6z', '#9FD8FF') + w('M130 120c30-30 50-20 46 0-4 16-26 18-46 6z', '#9FD8FF') + w('M72 132c-20 6-30 24-18 32 10 6 22-8 22-24z', '#FFB7CB') + w('M128 132c20 6 30 24 18 32-10 6-22-8-22-24z', '#FFB7CB');
+  }
+  if (kind === 'rainbow')
+    return ['#FF6B6B', '#FFB347', '#FFE066', '#7BD389', '#6EC1E4', '#9277FF'].map((c, i) => `<path d="M${20 + i * 7} 150a${80 - i * 7} ${80 - i * 7} 0 0 1 ${160 - i * 14} 0" fill="none" stroke="${c}" stroke-width="7"/>`).join('');
   if (kind === 'backpack') return `<rect x="50" y="118" width="100" height="58" rx="20" fill="#4DA36B" ${o()}/>`;
   if (kind === 'devilwings') {
     const w = `fill="#7A4A9A" ${o()}`;
@@ -79,6 +93,13 @@ function bodyDeco(kind: Body): string {
     return `<path d="M100 124l-18-10v20zM100 124l18-10v20z" fill="#3D5AFE" ${o()}/><circle cx="100" cy="124" r="5" fill="#3D5AFE" ${o()}/>`;
   if (kind === 'ticketbag')
     return `<path d="M62 120l70 38" stroke="${INK}" stroke-width="4"/><rect x="120" y="148" width="30" height="24" rx="6" fill="#F2C14E" ${o()}/><rect x="126" y="140" width="18" height="12" rx="2" fill="#fff" ${O3}/>`;
+  if (kind === 'tie') return `<path d="M94 128h12l-2 6 6 28-10 10-10-10 6-28z" fill="#3D5AFE" ${O4}/>`;
+  if (kind === 'lei')
+    return [68, 78, 88, 100, 112, 122, 132].map((x, i) => `<circle cx="${x}" cy="${142 - Math.abs(i - 3) * 2.5}" r="6.5" fill="${['#FF7AA8', '#FFD24D', '#FF9F43'][i % 3]}" ${O3}/>`).join('');
+  if (kind === 'medal')
+    return `<path d="M88 128l12 20 12-20" fill="none" stroke="#3D5AFE" stroke-width="6"/><circle cx="100" cy="156" r="11" fill="#FFD24D" ${O4}/><path d="M100 150l2 4h4l-3 3 1 4-4-2-4 2 1-4-3-3h4z" fill="#E08A3C"/>`;
+  if (kind === 'bell')
+    return `<path d="M68 128q32 12 64 0" fill="none" stroke="#E4574C" stroke-width="8" stroke-linecap="round"/><circle cx="100" cy="142" r="9" fill="#FFD24D" ${O4}/><path d="M95 145h10" ${O3}/>`;
   if (kind === 'necklace')
     return [70, 79, 88, 97, 106, 115, 124, 133].map((x, i) => `<circle cx="${x}" cy="${146 - Math.abs(i - 3.5) * 2}" r="4.5" fill="#FFFFFF" ${o('', 2)}/>`).join('');
   if (kind === 'camera')
@@ -105,6 +126,15 @@ function faceDeco(kind: Face): string {
       [[0, -8], [8, 0], [0, 8], [-8, 0]].map(([dx, dy]) => `<circle cx="${142 + dx}" cy="${40 + dy}" r="7" fill="#FFB3C7" ${O3}/>`).join('') +
       `<circle cx="142" cy="40" r="5" fill="#FFD24D" ${O3}/>`
     );
+  if (kind === 'cap')
+    return `<path d="M56 54c0-22 20-34 44-34s44 12 44 34z" fill="#E4574C" ${o()}/><path d="M138 54h28q4 6-4 8h-30z" fill="#E4574C" ${o('', 5)}/><circle cx="100" cy="20" r="4" fill="#E4574C" ${O3}/>`;
+  if (kind === 'witchhat')
+    return `<path d="M100 -4l-30 52h60z" fill="#4A2A5A" ${o()}/><rect x="48" y="44" width="104" height="10" rx="5" fill="#4A2A5A" ${o()}/><rect x="74" y="36" width="52" height="7" fill="#9277FF"/>`;
+  if (kind === 'bunnyears')
+    return `<ellipse cx="76" cy="20" rx="10" ry="26" fill="#FFFFFF" ${o('', 5)}/><ellipse cx="124" cy="20" rx="10" ry="26" fill="#FFFFFF" ${o('', 5)}/><ellipse cx="76" cy="22" rx="4" ry="16" fill="#FFB7CB"/><ellipse cx="124" cy="22" rx="4" ry="16" fill="#FFB7CB"/><path d="M60 46q40-12 80 0" stroke="#FF7AA8" stroke-width="6" fill="none"/>`;
+  if (kind === 'santahat')
+    return `<path d="M58 50c4-30 30-42 56-36 14 4 28 16 34 32-10-6-20-4-24 4z" fill="#E4574C" ${o()}/><rect x="52" y="42" width="96" height="14" rx="7" fill="#FFFFFF" ${o('', 4)}/><circle cx="150" cy="44" r="8" fill="#FFFFFF" ${O4}/>`;
+  if (kind === 'monocle') return `<circle cx="122" cy="86" r="15" fill="#FFFFFF" fill-opacity="0.25" stroke="#C9A86A" stroke-width="4"/><path d="M136 92q6 20 0 36" stroke="#C9A86A" stroke-width="2" fill="none"/>`;
   if (kind === 'tophat')
     return `<rect x="74" y="4" width="52" height="40" rx="4" fill="#2B2B3A" ${o()}/><rect x="74" y="32" width="52" height="7" fill="#C2413A"/><rect x="56" y="40" width="88" height="10" rx="5" fill="#2B2B3A" ${o()}/>`;
   if (kind === 'ribbon') return `<path d="M58 40l-20-12v26zM58 40l20-12v26z" fill="#FF7AA8" ${o('', 4)}/><circle cx="58" cy="40" r="6" fill="#FF7AA8" ${O4}/>`;
