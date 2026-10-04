@@ -1,11 +1,12 @@
 import { Tabs } from 'expo-router';
-import Svg, { Circle, Path, Rect } from 'react-native-svg';
+import Svg, { Circle, Ellipse, Path, Rect } from 'react-native-svg';
 import { colors, fonts } from '../../src/theme';
 
 type IconProps = { color: string };
 const s = { fill: 'none', strokeWidth: 2, strokeLinecap: 'round', strokeLinejoin: 'round' } as const;
 const icons: Record<string, (p: IconProps) => React.ReactElement> = {
-  shop: ({ color }) => (<Svg width={24} height={24} viewBox="0 0 24 24"><Path d="M5 8h14l-1 12H6z" stroke={color} {...s} /><Path d="M9 8a3 3 0 016 0" stroke={color} {...s} /></Svg>),
+  // Same paw as the app logo.
+  shop: ({ color }) => (<Svg width={24} height={24} viewBox="-50 -56 100 100"><Ellipse cx={-34} cy={-18} rx={10} ry={12} fill={color} /><Ellipse cx={-13} cy={-38} rx={10.5} ry={13} fill={color} /><Ellipse cx={13} cy={-38} rx={10.5} ry={13} fill={color} /><Ellipse cx={34} cy={-18} rx={10} ry={12} fill={color} /><Path d="M0 -10c19 0 32 14 32 28 0 12-9 17-18 15-5-1-9-3-14-3s-9 2-14 3c-9 2-18-3-18-15 0-14 13-28 32-28z" fill={color} /></Svg>),
   explore: ({ color }) => (<Svg width={24} height={24} viewBox="0 0 24 24"><Circle cx={11} cy={11} r={7} stroke={color} {...s} /><Path d="M20 20l-4-4" stroke={color} {...s} /></Svg>),
   community: ({ color }) => (<Svg width={24} height={24} viewBox="0 0 24 24"><Path d="M4 5h16v11H9l-5 4z" stroke={color} {...s} /></Svg>),
   tickets: ({ color }) => (<Svg width={24} height={24} viewBox="0 0 24 24"><Path d="M3 7h18v3a2 2 0 000 4v3H3v-3a2 2 0 000-4z" stroke={color} {...s} /></Svg>),

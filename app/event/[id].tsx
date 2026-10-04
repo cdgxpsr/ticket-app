@@ -20,6 +20,7 @@ export default function EventDetail() {
   const [saving, setSaving] = useState(false);
   const { width } = useWindowDimensions();
   const heroW = width - 40;
+  const heroH = Math.round((heroW * 4) / 3);
   const loadReviews = () => getEventReviews(String(id)).then((r) => {
     setReviews(r);
     const m = r.find((x) => x.mine);
@@ -69,9 +70,12 @@ export default function EventDetail() {
         <ScrollView contentContainerStyle={styles.body}>
           {images.length > 0 && (
             <View>
-              <ScrollView horizontal pagingEnabled showsHorizontalScrollIndicator={false} style={[styles.hero, { width: heroW }]}
+              <ScrollView horizontal pagingEnabled showsHorizontalScrollIndicator={false} style={[styles.hero, { width: heroW, height: heroH }]}
                 onMomentumScrollEnd={(e) => setPage(Math.round(e.nativeEvent.contentOffset.x / heroW))}>
-                {images.map((u) => <Image key={u} source={{ uri: u }} style={{ width: heroW, height: '100%' }} resizeMode="cover" />)}
+                {images.map((u) => (
+                  <Image key={u} source={{ uri: u }} style={{ width: heroW, height: heroH }} resizeMode="cover"
+                    onError={() => setImages((l) => (l.length > 1 ? l.filter((x) => x !== u) : l))} />
+                ))}
               </ScrollView>
               {images.length > 1 && <View style={styles.pageTag}><Text style={styles.pageText}>{page + 1} / {images.length}</Text></View>}
             </View>
@@ -154,7 +158,7 @@ const styles = StyleSheet.create({
   link: { color: colors.muted, fontFamily: fonts.semibold, fontSize: 15 },
   desc: { color: colors.muted, fontFamily: fonts.regular, fontSize: 14 },
   body: { padding: 20, gap: 18 },
-  hero: { aspectRatio: 3 / 4, borderRadius: 16, backgroundColor: colors.surface, flexGrow: 0 },
+  hero: { borderRadius: 16, backgroundColor: colors.surface, flexGrow: 0 },
   pageTag: { position: 'absolute', right: 12, bottom: 12, backgroundColor: 'rgba(0,0,0,0.55)', borderRadius: 999, paddingHorizontal: 10, paddingVertical: 4 },
   pageText: { color: '#fff', fontFamily: fonts.semibold, fontSize: 12 },
   avg: { color: colors.accent, fontFamily: fonts.bold, fontSize: 16 },

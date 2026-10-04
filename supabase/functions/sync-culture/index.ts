@@ -87,7 +87,48 @@ async function kopis(key: string): Promise<Row[]> {
     }
   }
   await addBookingLinks(key, out);
+  await addVenueAddresses(key, out);
   return out;
+}
+
+/** KOPIS list `area` is only the 시도; the 공연장 (prfplc) record has the street address with 구/시/군. */
+async function existingAddresses(): Promise<Map<string, string>> {
+  const m = new Map<string, string>();
+  try {
+    const r = await fetch(`${env('SUPABASE_URL')}/rest/v1/culture_events?select=id,address&source=eq.kopis&address=like.*%20*`, {
+      headers: { apikey: env('SUPABASE_SERVICE_ROLE_KEY'), Authorization: `Bearer ${env('SUPABASE_SERVICE_ROLE_KEY')}` },
+    });
+    if (r.ok) for (const row of await r.json()) if (row.address) m.set(row.id, row.address);
+  } catch (e) {
+    console.error('existingAddresses', e);
+  }
+  return m;
+}
+async function addVenueAddresses(key: string, rows: Row[]) {
+  const known = await existingAddresses();
+  const venues = new Map<string, string | null>();
+  let calls = 0;
+  for (const row of rows) {
+    const have = known.get(row.id);
+    if (have) { row.address = have; continue; }
+    if (calls >= DETAIL_CAP) continue;
+    try {
+      calls++;
+      const d = await fetch(`https://www.kopis.or.kr/openApi/restful/pblprfr/${row.id.slice(6)}?service=${key}`);
+      if (!d.ok) continue;
+      const fid = tag(await d.text(), 'mt10id');
+      if (!fid) continue;
+      if (!venues.has(fid)) {
+        calls++;
+        const f = await fetch(`https://www.kopis.or.kr/openApi/restful/prfplc/${fid}?service=${key}`);
+        venues.set(fid, f.ok ? tag(await f.text(), 'adres') : null);
+      }
+      const adres = venues.get(fid);
+      if (adres) row.address = decode(adres);
+    } catch (e) {
+      console.error('kopis venue', row.id, e);
+    }
+  }
 }
 
 const DETAIL_CAP = 150; // KOPIS detail calls per run (quota)

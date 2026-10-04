@@ -20,11 +20,11 @@ export default function More() {
     isAnonymous().then(setAnon).catch(() => {});
   }, []));
   return (
-    <Screen title="더보기" header={<Pressable onPress={() => router.push('/avatar')} accessibilityLabel="아바타 꾸미기"><CatAvatar size={56} /></Pressable>}>
+    <Screen title="더보기" header={<Pressable onPress={() => router.push({ pathname: '/shop', params: { tab: 'inv' } })} accessibilityLabel="아바타 꾸미기"><CatAvatar size={56} /></Pressable>}>
       <View style={styles.group}>
-        <Pressable style={styles.row} onPress={() => router.push('/avatar')}>
+        <Pressable style={styles.row} onPress={() => router.push({ pathname: '/shop', params: { tab: 'inv' } })}>
           <Text style={styles.label}>내 고양이 꾸미기</Text>
-          <Text style={styles.value}>아바타</Text>
+          <Text style={styles.value}>냥냥상점 · 인벤토리</Text>
         </Pressable>
         <View style={[styles.row, styles.divider]}>
           <Text style={styles.label}>모은 발도장</Text>

@@ -132,7 +132,8 @@ export async function getEventImages(e: CultureEvent): Promise<string[]> {
     await ensureSession();
     const { data, error } = await supabase.functions.invoke<{ images: string[] }>('event-images', { method: 'POST', body: { id: e.id } });
     if (error || !data?.images?.length) return fallback;
-    return data.images;
+    // KOPIS 소개 이미지 are often 10,000px+ tall, which iOS won't render; crop/resize through a free image proxy.
+    return data.images.map((u, i) => (i === 0 && u === main ? u : `https://wsrv.nl/?url=${encodeURIComponent(u)}&w=900&h=1200&fit=cover&a=top&output=jpg`));
   } catch {
     return fallback;
   }
@@ -158,4 +159,41 @@ export async function getEventReviews(eventId: string): Promise<EventReview[]> {
 export async function saveEventReview(eventId: string, rating: number, text: string): Promise<boolean> {
   const { error } = await supabase.from('event_reviews').upsert({ event_id: eventId, rating, text: text.trim() }, { onConflict: 'event_id,author' });
   return !error;
+}
+
+export const INTEREST_KEY = 'explore.interests';
+export const RECOMMEND = '추천';
+
+/**
+ * Mixes categories instead of listing them in blocks: interests first, round-robin across categories;
+ * within a category, items with a picture and ones happening soonest come first.
+ * Later this is where per-user signals (likes, reviews, visited tickets) plug in.
+ */
+export function curate(events: CultureEvent[], interests: string[]): CultureEvent[] {
+  const today = new Date().toISOString().slice(0, 10);
+  const score = (e: CultureEvent) => {
+    let s = e.image_url ? 0 : 1000;
+    const start = e.start_date ?? today;
+    const days = Math.abs((Date.parse(start < today ? today : start) - Date.parse(today)) / 86400000);
+    return s + Math.min(days, 365);
+  };
+  const groups = new Map<string, CultureEvent[]>();
+  for (const e of events) {
+    const g = groups.get(e.category) ?? [];
+    g.push(e);
+    groups.set(e.category, g);
+  }
+  for (const g of groups.values()) g.sort((a, b) => score(a) - score(b));
+  const order = [...groups.keys()].sort((a, b) => (interests.includes(b) ? 1 : 0) - (interests.includes(a) ? 1 : 0));
+  const out: CultureEvent[] = [];
+  for (let i = 0; out.length < events.length; i++) {
+    for (const c of order) {
+      const g = groups.get(c)!;
+      // interests get two slots per round
+      const take = interests.includes(c) ? 2 : 1;
+      for (let k = 0; k < take; k++) { const e = g[i * take + k]; if (e) out.push(e); }
+    }
+    if (i > events.length) break;
+  }
+  return out;
 }
