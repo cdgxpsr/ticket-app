@@ -4,6 +4,7 @@ import { colors, fonts } from '../theme';
 import { CatAvatar } from './CatAvatar';
 import { PawStamp } from './PawStamp';
 import { Ticket, TicketCard } from './TicketCard';
+import { t } from '../i18n';
 
 // Laid out at 360x640 logical points; captured at 1080x1920 pixels.
 export const STORY_W = 360;
@@ -14,15 +15,15 @@ export const StoryShareView = forwardRef<View, { ticket: Ticket }>(function Stor
     <View ref={ref} collapsable={false} style={styles.root}>
       <View style={styles.header}>
         <CatAvatar size={72} />
-        <Text style={styles.wordmark}>냥냥수첩</Text>
+        <Text style={styles.wordmark}>{t('냥냥수첩')}</Text>
       </View>
       <View style={styles.stamp}>
         <PawStamp size={88} color={colors.accent} rotate={-18} />
       </View>
       <TicketCard ticket={ticket} large />
       <View style={styles.footer}>
-        <Text style={styles.cta}>냥냥수첩에서 내 관람 기록 모으기</Text>
-        <Text style={styles.small}>냥냥수첩</Text>
+        <Text style={styles.cta}>{t('냥냥수첩에서 내 관람 기록 모으기')}</Text>
+        <Text style={styles.small}>{t('냥냥수첩')}</Text>
       </View>
     </View>
   );

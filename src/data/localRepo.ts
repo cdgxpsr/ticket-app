@@ -2,6 +2,7 @@ import { File, Paths } from 'expo-file-system';
 import { getAvatar } from '../lib/avatar';
 import type { Repo } from './repo';
 import type { BoardPost, Comment, Explore, FeedPost, Show, User } from './types';
+import { t } from '../i18n';
 
 const H = 3600_000;
 const now = Date.now();
@@ -75,7 +76,7 @@ function save() {
 const uid = () => `${Date.now()}${Math.random().toString(36).slice(2, 6)}`;
 
 function meUser(): User {
-  return { id: 'me', name: '나', avatar: getAvatar(), code: load().myCode };
+  return { id: 'me', name: t('나'), avatar: getAvatar(), code: load().myCode };
 }
 
 export const localRepo: Repo = {
@@ -130,10 +131,10 @@ export const localRepo: Repo = {
   async addFriend(code) {
     const s = load();
     const norm = code.trim().toUpperCase();
-    if (norm === s.myCode) throw new Error('내 초대 코드예요');
+    if (norm === s.myCode) throw new Error(t('내 초대 코드예요'));
     const u = FRIENDS_POOL.find((x) => x.code === norm);
-    if (!u) throw new Error('코드를 찾을 수 없어요');
-    if (s.friends.includes(u.id)) throw new Error('이미 친구예요');
+    if (!u) throw new Error(t('코드를 찾을 수 없어요'));
+    if (s.friends.includes(u.id)) throw new Error(t('이미 친구예요'));
     s.friends.push(u.id);
     save();
     return u;

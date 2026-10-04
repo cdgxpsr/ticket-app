@@ -2,9 +2,10 @@ import { router, useFocusEffect } from 'expo-router';
 import { useCallback, useState } from 'react';
 import { Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { formatPeriod, httpsUrl, type CultureEvent } from '../src/data/culture';
+import { evTitle, formatPeriod, httpsUrl, type CultureEvent } from '../src/data/culture';
 import { listSaved } from '../src/lib/saved';
 import { colors, fonts } from '../src/theme';
+import { t } from '../src/i18n';
 
 export default function Saved() {
   const [items, setItems] = useState<CultureEvent[]>([]);
@@ -12,19 +13,19 @@ export default function Saved() {
   return (
     <SafeAreaView style={styles.safe}>
       <View style={styles.top}>
-        <Pressable onPress={() => (router.canGoBack() ? router.back() : router.replace('/'))} hitSlop={12}><Text style={styles.link}>닫기</Text></Pressable>
-        <Text style={styles.title}>저장한 문화 소식</Text>
+        <Pressable onPress={() => (router.canGoBack() ? router.back() : router.replace('/'))} hitSlop={12}><Text style={styles.link}>{t('닫기')}</Text></Pressable>
+        <Text style={styles.title}>{t('저장한 문화 소식')}</Text>
         <View style={{ width: 32 }} />
       </View>
       <ScrollView contentContainerStyle={styles.body}>
         {items.length === 0 ? (
-          <Text style={styles.muted}>아직 저장한 게 없어요. 둘러보기에서 마음에 드는 걸 ♡ 눌러 저장해 보세요.</Text>
+          <Text style={styles.muted}>{t('아직 저장한 게 없어요. 둘러보기에서 마음에 드는 걸 ♡ 눌러 저장해 보세요.')}</Text>
         ) : items.map((e) => (
           <Pressable key={e.id} style={styles.card} onPress={() => router.push({ pathname: '/event/[id]', params: { id: e.id } })}>
             {e.image_url ? <Image source={{ uri: httpsUrl(e.image_url)! }} style={styles.thumb} /> : <View style={[styles.thumb, { backgroundColor: colors.border }]} />}
             <View style={{ flex: 1, gap: 3 }}>
-              <Text style={styles.badge}>{e.category} · {e.region}</Text>
-              <Text style={styles.name} numberOfLines={2}>{e.title}</Text>
+              <Text style={styles.badge}>{t(e.category)} · {t(e.region)}</Text>
+              <Text style={styles.name} numberOfLines={2}>{evTitle(e)}</Text>
               <Text style={styles.muted}>{formatPeriod(e)}</Text>
             </View>
           </Pressable>

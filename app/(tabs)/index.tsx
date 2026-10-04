@@ -4,9 +4,10 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { ActivityIndicator, Image, Modal, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import Svg, { Circle, Path, Rect } from 'react-native-svg';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { CULTURE_CATEGORIES, KOBIS_CREDIT, REGIONS, KMDB_CREDIT, httpsUrl, formatPeriod, getCultureEvents, districtOf, inRange, type DateSpan, curate, INTEREST_KEY, RECOMMEND, type CultureEvent } from '../../src/data/culture';
+import { evTitle, CULTURE_CATEGORIES, KOBIS_CREDIT, REGIONS, KMDB_CREDIT, httpsUrl, formatPeriod, getCultureEvents, districtOf, inRange, type DateSpan, curate, INTEREST_KEY, RECOMMEND, type CultureEvent } from '../../src/data/culture';
 import { Calendar, spanLabel } from '../../src/components/Calendar';
 import { colors, fonts } from '../../src/theme';
+import { t } from '../../src/i18n';
 
 const REGION_KEY = 'explore.region';
 const CAT_COLOR: Record<string, string> = { 영화: '#5B4B8A', 공연: '#8A3B5B', 전시: '#2F6B6B', 축제: '#A0522D', 액티비티: '#3E6B3A', 숙박: '#4A5A80' };
@@ -77,7 +78,7 @@ export default function Explore() {
     return [...m.entries()].sort((a, b) => a[0].localeCompare(b[0], 'ko'));
   }, [events]);
   const filtered = (events ?? []).filter((e) =>
-    (district === '전체' || districtOf(e) === district) && (!q.trim() || e.title.includes(q.trim()) || (e.venue ?? '').includes(q.trim())) &&
+    (district === '전체' || districtOf(e) === district) && (!q.trim() || e.title.includes(q.trim()) || evTitle(e).toLowerCase().includes(q.trim().toLowerCase()) || (e.venue ?? '').includes(q.trim())) &&
     (ccat !== RECOMMEND || !interests.length || interests.includes(e.category)) && inRange(e, when));
   const shown = ccat === RECOMMEND || ccat === '전체' ? curate(filtered, interests) : filtered;
 
@@ -90,27 +91,27 @@ export default function Explore() {
   // Window of up to 5 page numbers around the current page.
   const first = Math.max(1, Math.min(cur - 2, pages - 4));
   const nums = Array.from({ length: Math.min(5, pages) }, (_, i) => first + i);
-  const catLabel = ccat === '전체' ? '전체' : ccat;
+  const catLabel = t(ccat);
 
   return (
     <SafeAreaView style={styles.safe} edges={['top']}>
       <View style={styles.head}>
         <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-          <Text style={styles.title}>둘러보기</Text>
-          <Pressable onPress={() => router.push('/saved')} hitSlop={8} accessibilityLabel="저장한 문화 소식">
+          <Text style={styles.title}>{t('둘러보기')}</Text>
+          <Pressable onPress={() => router.push('/saved')} hitSlop={8} accessibilityLabel={t('저장한 문화 소식')}>
             <Svg width={26} height={26} viewBox="0 0 24 24"><Path d="M12 20s-7-4.4-7-10a4 4 0 017-2.6A4 4 0 0119 10c0 5.6-7 10-7 10z" fill="none" stroke={colors.text} strokeWidth={1.8} strokeLinejoin="round" /></Svg>
           </Pressable>
         </View>
         <View style={styles.search}>
           <Svg width={18} height={18} viewBox="0 0 24 24"><Circle cx={11} cy={11} r={6.5} stroke="#8E859A" strokeWidth={1.8} fill="none" /><Path d="M16 16l4 4" stroke="#8E859A" strokeWidth={1.8} strokeLinecap="round" /></Svg>
-          <TextInput value={q} onChangeText={setQ} placeholder="전시, 공연, 영화, 장소 검색" placeholderTextColor="#8E859A" style={styles.input} />
+          <TextInput value={q} onChangeText={setQ} placeholder={t('전시, 공연, 영화, 장소 검색')} placeholderTextColor="#8E859A" style={styles.input} />
         </View>
         <View style={styles.filterBar}>
           {(['region', 'cat', 'date'] as const).map((k, i) => {
             const on = panel === k;
-            const label = k === 'region' ? (district === '전체' ? region : `${region} ${district}`)
+            const label = k === 'region' ? (district === '전체' ? t(region) : `${t(region)} ${district}`)
               : k === 'date' ? spanLabel(when)
-              : ccat === '전체' ? '종류 전체' : ccat === RECOMMEND ? '내 관심사' : ccat;
+              : ccat === '전체' ? t('종류 전체') : ccat === RECOMMEND ? t('내 관심사') : t(ccat);
             return (
               <Pressable key={k} onPress={() => setPanel(on ? null : k)} style={[styles.filterBtn, i < 2 && styles.filterFirst, k === 'date' && { flex: 0.8 }, on && styles.filterOn]} accessibilityRole="button" accessibilityState={{ expanded: on }}>
                 <Text style={[styles.filterLabel, on && styles.filterLabelOn]} numberOfLines={1}>{label}</Text>
@@ -126,16 +127,16 @@ export default function Explore() {
                 const on = r === region;
                 return (
                   <Pressable key={r} onPress={() => pickRegion(r)} style={[styles.sido, on && styles.sidoOn]}>
-                    <Text style={[styles.sidoText, on && styles.sidoTextOn]}>{r}</Text>
+                    <Text style={[styles.sidoText, on && styles.sidoTextOn]}>{t(r)}</Text>
                   </Pressable>
                 );
               })}
             </ScrollView>
             <ScrollView style={{ flex: 1 }} contentContainerStyle={styles.guWrap}>
               {region === '전국' ? (
-                <Text style={styles.muted}>← 지역을 선택해 주세요</Text>
+                <Text style={styles.muted}>{t('← 지역을 선택해 주세요')}</Text>
               ) : events && !districts.length ? (
-                <Text style={styles.muted}>구·시·군 정보가 아직 없어요. 다음 새벽 갱신 후 나와요</Text>
+                <Text style={styles.muted}>{t('구·시·군 정보가 아직 없어요. 다음 새벽 갱신 후 나와요')}</Text>
               ) : !events ? (
                 <ActivityIndicator color={colors.accent} />
               ) : (
@@ -143,7 +144,7 @@ export default function Explore() {
                   const on = d === district;
                   return (
                     <Pressable key={d} onPress={() => { setDistrict(d); setPanel(null); }} style={[styles.gu, on && styles.guOn]}>
-                      <Text style={[styles.guText, on && styles.sidoTextOn]}>{d === '전체' ? `${region} 전체` : d}</Text>
+                      <Text style={[styles.guText, on && styles.sidoTextOn]}>{d === '전체' ? t('{region} 전체', { region: t(region) }) : d}</Text>
                       <Text style={styles.guCount}>{n}</Text>
                     </Pressable>
                   );
@@ -160,8 +161,8 @@ export default function Explore() {
         {panel === 'cat' && (
           <View style={[styles.panel, styles.catPanel]}>
             <Pressable onPress={() => (interests.length ? (setCcat(RECOMMEND), setPanel(null)) : editInterests())} style={[styles.recoRow, ccat === RECOMMEND && styles.catCellOn]}>
-              <Text style={[styles.catText, ccat === RECOMMEND && styles.sidoTextOn]}>내 관심사 추천{interests.length ? ` · ${interests.join(', ')}` : ''}</Text>
-              <Pressable onPress={editInterests} hitSlop={8}><Text style={styles.editLink}>{interests.length ? '수정' : '고르기'}</Text></Pressable>
+              <Text style={[styles.catText, ccat === RECOMMEND && styles.sidoTextOn]}>{t('내 관심사 추천')}{interests.length ? ` · ${interests.map((x) => t(x)).join(', ')}` : ''}</Text>
+              <Pressable onPress={editInterests} hitSlop={8}><Text style={styles.editLink}>{interests.length ? t('수정') : t('고르기')}</Text></Pressable>
             </Pressable>
             {CULTURE_CATEGORIES.map((c) => {
               const on = c === ccat;
@@ -169,7 +170,7 @@ export default function Explore() {
               return (
                 <Pressable key={c} onPress={() => { setCcat(c); setPanel(null); }} style={[styles.catCell, on && styles.catCellOn]} accessibilityRole="button" accessibilityState={{ selected: on }}>
                   <Svg width={24} height={24} viewBox="0 0 24 24">{ICONS[c]?.(color)}</Svg>
-                  <Text style={[styles.catText, on && styles.sidoTextOn]}>{c}</Text>
+                  <Text style={[styles.catText, on && styles.sidoTextOn]}>{t(c)}</Text>
                 </Pressable>
               );
             })}
@@ -178,14 +179,14 @@ export default function Explore() {
       </View>
       <ScrollView ref={listRef} style={{ flex: 1 }} contentContainerStyle={styles.main}>
         <View style={styles.listHead}>
-          <Text style={styles.listTitle}>{region}{district !== '전체' ? ` ${district}` : ''} · {ccat === RECOMMEND ? '추천' : catLabel}{when ? ` · ${spanLabel(when)}` : ''}</Text>
+          <Text style={styles.listTitle}>{t(region)}{district !== '전체' ? ` ${district}` : ''} · {ccat === RECOMMEND ? t('추천') : catLabel}{when ? ` · ${spanLabel(when)}` : ''}</Text>
           {!!events && <Text style={styles.count}>{total}</Text>}
         </View>
-        {sample && <Text style={styles.note}>예시 정보를 보여주고 있어요 · 매일 새벽 최신 정보로 갱신돼요</Text>}
+        {sample && <Text style={styles.note}>{t('예시 정보를 보여주고 있어요 · 매일 새벽 최신 정보로 갱신돼요')}</Text>}
         {!events ? (
           <ActivityIndicator color={colors.accent} style={{ marginVertical: 24 }} />
         ) : total === 0 ? (
-          <View style={styles.empty}><Text style={styles.muted}>조건에 맞는 {ccat === '전체' ? '문화 소식' : ccat}이 아직 없어요</Text></View>
+          <View style={styles.empty}><Text style={styles.muted}>{ccat === '전체' ? t('조건에 맞는 문화 소식이 아직 없어요') : t('조건에 맞는 {cat}이 아직 없어요', { cat: t(ccat) })}</Text></View>
         ) : (
           <View style={{ gap: 10 }}>
             {shown.slice((cur - 1) * PAGE_SIZE, cur * PAGE_SIZE).map((e) => (
@@ -194,12 +195,12 @@ export default function Explore() {
                   <Image source={{ uri: httpsUrl(e.image_url)! }} style={styles.thumb} resizeMode="cover" />
                 ) : (
                   <View style={[styles.thumb, { backgroundColor: CAT_COLOR[e.category] ?? colors.border, alignItems: 'center', justifyContent: 'center' }]}>
-                    <Text style={styles.thumbText}>{e.category}</Text>
+                    <Text style={styles.thumbText}>{t(e.category)}</Text>
                   </View>
                 )}
                 <View style={{ flex: 1, gap: 3 }}>
-                  <Text style={styles.badge}>{e.category} · {e.region}{districtOf(e) ? ` ${districtOf(e)}` : ''}</Text>
-                  <Text style={styles.cardTitle} numberOfLines={2}>{e.title}</Text>
+                  <Text style={styles.badge}>{t(e.category)} · {t(e.region)}{districtOf(e) ? ` ${districtOf(e)}` : ''}</Text>
+                  <Text style={styles.cardTitle} numberOfLines={2}>{evTitle(e)}</Text>
                   {!!(e.venue || e.address) && <Text style={styles.muted} numberOfLines={1}>{e.venue || e.address}</Text>}
                   <Text style={styles.muted}>{formatPeriod(e)}</Text>
                 </View>
@@ -209,38 +210,38 @@ export default function Explore() {
               <View style={styles.pager}>
                 <Pressable onPress={() => goPage(Math.max(1, cur - 1))} disabled={cur === 1} hitSlop={8} style={[styles.pageBtn, cur === 1 && { opacity: 0.3 }]}><Text style={styles.pageText}>‹</Text></Pressable>
                 {nums.map((n) => (
-                  <Pressable key={n} onPress={() => goPage(n)} hitSlop={4} style={[styles.pageBtn, n === cur && styles.pageOn]} accessibilityLabel={`${n}페이지`}>
+                  <Pressable key={n} onPress={() => goPage(n)} hitSlop={4} style={[styles.pageBtn, n === cur && styles.pageOn]} accessibilityLabel={t('{n}페이지', { n })}>
                     <Text style={[styles.pageText, n === cur && styles.pageTextOn]}>{n}</Text>
                   </Pressable>
                 ))}
                 <Pressable onPress={() => goPage(Math.min(pages, cur + 1))} disabled={cur === pages} hitSlop={8} style={[styles.pageBtn, cur === pages && { opacity: 0.3 }]}><Text style={styles.pageText}>›</Text></Pressable>
               </View>
             )}
-            {shown.some((e) => e.category === '영화') && <Text style={styles.credit}>{KOBIS_CREDIT}</Text>}
-            {shown.some((e) => e.poster_source === 'kmdb') && <Text style={styles.credit}>{KMDB_CREDIT}</Text>}
+            {shown.some((e) => e.category === '영화') && <Text style={styles.credit}>{t(KOBIS_CREDIT)}</Text>}
+            {shown.some((e) => e.poster_source === 'kmdb') && <Text style={styles.credit}>{t(KMDB_CREDIT)}</Text>}
           </View>
         )}
       </ScrollView>
       <Modal visible={askInterests} transparent animationType="fade" onRequestClose={() => saveInterests(pick)}>
         <View style={styles.backdrop}>
           <View style={styles.sheet}>
-            <Text style={styles.sheetTitle}>어떤 문화생활을 좋아하세요?</Text>
-            <Text style={styles.muted}>골라 주시면 둘러보기를 취향대로 보여드려요. 언제든 바꿀 수 있어요.</Text>
+            <Text style={styles.sheetTitle}>{t('어떤 문화생활을 좋아하세요?')}</Text>
+            <Text style={styles.muted}>{t('골라 주시면 둘러보기를 취향대로 보여드려요. 언제든 바꿀 수 있어요.')}</Text>
             <View style={styles.pickGrid}>
               {CULTURE_CATEGORIES.filter((c) => c !== '전체').map((c) => {
                 const on = pick.includes(c);
                 return (
                   <Pressable key={c} onPress={() => setPick((p) => (on ? p.filter((x) => x !== c) : [...p, c]))} style={[styles.catCell, styles.pickCell, on && styles.catCellOn]}>
                     <Svg width={26} height={26} viewBox="0 0 24 24">{ICONS[c]?.(on ? colors.accent : '#9A90A8')}</Svg>
-                    <Text style={[styles.catText, on && styles.sidoTextOn]}>{c}</Text>
+                    <Text style={[styles.catText, on && styles.sidoTextOn]}>{t(c)}</Text>
                   </Pressable>
                 );
               })}
             </View>
             <Pressable style={[styles.start, !pick.length && { opacity: 0.5 }]} disabled={!pick.length} onPress={() => saveInterests(pick)}>
-              <Text style={styles.startText}>{pick.length ? `${pick.length}개 선택 · 시작하기` : '하나 이상 골라 주세요'}</Text>
+              <Text style={styles.startText}>{pick.length ? t('{n}개 선택 · 시작하기', { n: pick.length }) : t('하나 이상 골라 주세요')}</Text>
             </Pressable>
-            <Pressable onPress={() => saveInterests([])} hitSlop={8}><Text style={[styles.muted, { textAlign: 'center' }]}>건너뛰기</Text></Pressable>
+            <Pressable onPress={() => saveInterests([])} hitSlop={8}><Text style={[styles.muted, { textAlign: 'center' }]}>{t('건너뛰기')}</Text></Pressable>
           </View>
         </View>
       </Modal>

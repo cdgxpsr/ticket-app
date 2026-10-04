@@ -1,6 +1,7 @@
 import { File, Paths } from 'expo-file-system';
 import { AvatarOptions } from '../avatar/cat';
 import { listCards } from './cards';
+import { t } from '../i18n';
 
 /** 냥냥상점 currency: 츄르. Earned by activity (growth-first: no real-money purchases yet). */
 export type Slot = Exclude<keyof AvatarOptions, 'coat' | 'expr'> | 'coat' | 'expr';
@@ -19,7 +20,11 @@ export const FREE_LABELS: Record<string, string> = {
   cheese: '치즈', white: '흰냥', black: '까망', gray: '회색', happy: '해맑음', derp: '메롱', deadpan: '무념무상', smug: '흐뭇',
   none: '없음', beret: '베레모', glasses: '안경', scarf: '목도리', bowtie: '나비넥타이',
 };
-export const itemLabel = (slot: Slot, value: string) => CATALOG.find((i) => i.slot === slot && i.value === value)?.label ?? FREE_LABELS[value] ?? value;
+export const itemLabel = (slot: Slot, value: string) => {
+  const label = CATALOG.find((i) => i.slot === slot && i.value === value)?.label ?? FREE_LABELS[value] ?? value;
+  // '기타' is also the "other" category, so the guitar gets its own translation key.
+  return label === '기타' ? t('기타(악기)') : t(label);
+};
 
 // `need`: old ticket-count unlocks still count as owned, so earlier testers keep their items.
 export const CATALOG: ShopItem[] = [

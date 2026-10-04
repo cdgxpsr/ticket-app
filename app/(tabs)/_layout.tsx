@@ -1,6 +1,7 @@
 import { Tabs } from 'expo-router';
 import Svg, { Circle, Ellipse, Path, Rect } from 'react-native-svg';
 import { colors, fonts } from '../../src/theme';
+import { t as tr } from '../../src/i18n';
 
 type IconProps = { color: string };
 const s = { fill: 'none', strokeWidth: 2, strokeLinecap: 'round', strokeLinejoin: 'round' } as const;
@@ -35,7 +36,7 @@ export default function TabLayout() {
     >
       {tabs.map((t) => {
         const Icon = icons[t.icon];
-        return <Tabs.Screen key={t.name} name={t.name} options={{ title: t.title, tabBarIcon: ({ color }) => <Icon color={String(color)} /> }} />;
+        return <Tabs.Screen key={t.name} name={t.name} options={{ title: tr(t.title), tabBarIcon: ({ color }) => <Icon color={String(color)} /> }} />;
       })}
     </Tabs>
   );

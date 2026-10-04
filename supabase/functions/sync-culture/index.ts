@@ -245,6 +245,90 @@ async function purge() {
   if (!r.ok) throw new Error(`purge ${r.status}`);
 }
 
+/* ---------- Translation (Claude) ---------- */
+type Tr = { title: string; summary: string | null };
+type I18n = { en: Tr; ja: Tr; 'zh-Hans': Tr };
+const TRANSLATE_LIMIT = 300;
+const TRANSLATE_BATCH = 40;
+const TRANSLATE_PROMPT = `You localize listings for a Korean culture-events app (shows, exhibitions, festivals, activities, stays) into English, Japanese and Simplified Chinese.
+Rules:
+- Use the official foreign name when one exists (e.g. 국립중앙박물관 → National Museum of Korea / 国立中央博物館 / 国立中央博物馆; 예술의전당 → Seoul Arts Center). Otherwise romanize Korean proper nouns, venue and place names (Revised Romanization for English), and use the natural local rendering in Japanese and Chinese.
+- Keep titles of works recognizable: use the established local title if the work is known in that market, otherwise translate naturally.
+- Write natural, native phrasing like a real app in each locale, not a literal word-for-word translation. Keep it concise.
+- Keep phone numbers, dates, numbers and URLs as they are. If summary is null or empty, return null for summary.
+- Return ONLY strict JSON, no prose or code fences, shaped exactly as:
+{"<id>": {"en": {"title": "...", "summary": "..." | null}, "ja": {...}, "zh-Hans": {...}}, ...}
+with one entry for every input id.`;
+
+const validTr = (v: unknown): Tr | null => {
+  const o = v as { title?: unknown; summary?: unknown } | null;
+  if (!o || typeof o.title !== 'string' || !o.title.trim()) return null;
+  return { title: o.title.trim(), summary: typeof o.summary === 'string' && o.summary.trim() ? o.summary.trim() : null };
+};
+
+async function translateBatch(key: string, rows: { id: string; title: string; summary: string | null }[]): Promise<Record<string, I18n>> {
+  const input = rows.map((r) => ({ id: r.id, title: r.title, summary: r.summary ? r.summary.slice(0, 600) : null }));
+  const res = await fetch('https://api.anthropic.com/v1/messages', {
+    method: 'POST',
+    headers: { 'x-api-key': key, 'anthropic-version': '2023-06-01', 'content-type': 'application/json' },
+    body: JSON.stringify({
+      model: 'claude-sonnet-5-5',
+      max_tokens: 16000,
+      messages: [{ role: 'user', content: `${TRANSLATE_PROMPT}\n\nInput:\n${JSON.stringify(input)}` }],
+    }),
+  });
+  if (!res.ok) throw new Error(`anthropic ${res.status}: ${(await res.text()).slice(0, 200)}`);
+  const msg = await res.json();
+  const text = (msg.content ?? []).filter((b: { type: string }) => b.type === 'text').map((b: { text: string }) => b.text).join('');
+  const m = text.match(/\{[\s\S]*\}/);
+  if (!m) throw new Error('no json in response');
+  const parsed = JSON.parse(m[0]) as Record<string, Record<string, unknown>>;
+  const out: Record<string, I18n> = {};
+  for (const r of rows) {
+    const p = parsed[r.id];
+    const en = validTr(p?.en), ja = validTr(p?.ja), zh = validTr(p?.['zh-Hans']);
+    if (en && ja && zh) out[r.id] = { en, ja, 'zh-Hans': zh };
+  }
+  return out;
+}
+
+/** Fills culture_events.i18n for rows that have none yet. Never throws: failures are logged and counted. */
+async function translateMissing(): Promise<string> {
+  const key = env('ANTHROPIC_API_KEY');
+  if (!key) return 'skipped (no key)';
+  const headers = { apikey: env('SUPABASE_SERVICE_ROLE_KEY'), Authorization: `Bearer ${env('SUPABASE_SERVICE_ROLE_KEY')}` };
+  let done = 0, failed = 0;
+  try {
+    const r = await fetch(`${env('SUPABASE_URL')}/rest/v1/culture_events?select=id,title,summary&i18n=is.null&order=start_date.desc.nullslast&limit=${TRANSLATE_LIMIT}`, { headers });
+    if (!r.ok) throw new Error(`select ${r.status}: ${(await r.text()).slice(0, 200)}`);
+    const rows = (await r.json()) as { id: string; title: string; summary: string | null }[];
+    for (let i = 0; i < rows.length; i += TRANSLATE_BATCH) {
+      const batch = rows.slice(i, i + TRANSLATE_BATCH);
+      try {
+        const tr = await translateBatch(key, batch);
+        for (const row of batch) {
+          const i18n = tr[row.id];
+          if (!i18n) { failed++; continue; }
+          const p = await fetch(`${env('SUPABASE_URL')}/rest/v1/culture_events?id=eq.${encodeURIComponent(row.id)}`, {
+            method: 'PATCH',
+            headers: { ...headers, 'Content-Type': 'application/json', Prefer: 'return=minimal' },
+            body: JSON.stringify({ i18n }),
+          });
+          if (p.ok) done++; else { failed++; console.error('translate patch', row.id, p.status); }
+        }
+      } catch (e) {
+        failed += batch.length;
+        console.error('translate batch', i, (e as Error).message);
+      }
+    }
+    console.log('translate done', JSON.stringify({ candidates: rows.length, translated: done, failed }));
+    return `${done} translated, ${failed} failed`;
+  } catch (e) {
+    console.error('translate failed', (e as Error).message);
+    return `error: ${(e as Error).message}`;
+  }
+}
+
 Deno.serve(async (req) => {
   const secret = env('SYNC_SECRET');
   const role = env('SUPABASE_SERVICE_ROLE_KEY');
@@ -281,6 +365,7 @@ async function sync() {
     } catch (e) { counts.tour = `error: ${(e as Error).message}`; }
   } else counts.tour = 'skipped (no key)';
   try { await purge(); counts.purged = 'ok'; } catch (e) { counts.purged = `error: ${(e as Error).message}`; }
+  try { counts.translated = await translateMissing(); } catch (e) { counts.translated = `error: ${(e as Error).message}`; }
   console.log('sync done', JSON.stringify(counts));
   return counts;
 }

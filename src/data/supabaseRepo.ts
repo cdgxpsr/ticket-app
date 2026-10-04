@@ -4,6 +4,7 @@ import { supabase, uid } from '../lib/supabase';
 import { localRepo } from './localRepo';
 import type { Repo } from './repo';
 import type { BoardPost, Comment, FeedPost, Show, User } from './types';
+import { t } from '../i18n';
 
 type ProfileRow = { id: string; nickname: string; avatar: Record<string, unknown> | null; invite_code: string };
 type CommentRow = { id: string; text: string; created_at: string; author: ProfileRow };
@@ -90,7 +91,7 @@ export const supabaseRepo: Repo = {
   },
   async comment(postId, text) {
     const kind = await findTarget(postId);
-    if (!kind) throw new Error('글을 찾을 수 없어요');
+    if (!kind) throw new Error(t('글을 찾을 수 없어요'));
     const row = must(await supabase.from('comments').insert(kind === 'review' ? { review_id: postId, text } : { post_id: postId, text })
       .select(`id, text, created_at, author:profiles!comments_author_fkey(${PROFILE})`).single());
     return toComment(row as unknown as CommentRow);
@@ -106,9 +107,9 @@ export const supabaseRepo: Repo = {
     await uid();
     const { data, error } = await supabase.rpc('add_friend_by_code', { code });
     if (error) {
-      if (error.message.includes('self')) throw new Error('내 초대 코드예요');
-      if (error.message.includes('already')) throw new Error('이미 친구예요');
-      throw new Error('코드를 찾을 수 없어요');
+      if (error.message.includes('self')) throw new Error(t('내 초대 코드예요'));
+      if (error.message.includes('already')) throw new Error(t('이미 친구예요'));
+      throw new Error(t('코드를 찾을 수 없어요'));
     }
     return toUser(must(await supabase.from('profiles').select(PROFILE).eq('id', data as string).single()));
   },

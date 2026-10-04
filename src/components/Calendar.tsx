@@ -2,11 +2,12 @@ import { useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { ymdLocal, type DateSpan } from '../data/culture';
 import { colors, fonts } from '../theme';
+import { t } from '../i18n';
 
 const WEEK = ['일', '월', '화', '수', '목', '금', '토'];
 const md = (s: string) => `${Number(s.slice(5, 7))}.${Number(s.slice(8, 10))}`;
 
-export const spanLabel = (s: DateSpan) => (!s ? '날짜' : s.from === s.to ? md(s.from) : `${md(s.from)}~${md(s.to)}`);
+export const spanLabel = (s: DateSpan) => (!s ? t('날짜') : s.from === s.to ? md(s.from) : `${md(s.from)}~${md(s.to)}`);
 
 /** Month calendar: tap a day for that day, tap a second day to make a range. */
 export function Calendar({ value, onChange, onDone }: { value: DateSpan; onChange: (s: DateSpan) => void; onDone: () => void }) {
@@ -31,11 +32,11 @@ export function Calendar({ value, onChange, onDone }: { value: DateSpan; onChang
     <View style={styles.wrap}>
       <View style={styles.head}>
         <Pressable onPress={() => shift(-1)} hitSlop={10}><Text style={styles.arrow}>‹</Text></Pressable>
-        <Text style={styles.month}>{month.getFullYear()}년 {month.getMonth() + 1}월</Text>
+        <Text style={styles.month}>{t('{y}년 {m}월', { y: month.getFullYear(), m: month.getMonth() + 1 })}</Text>
         <Pressable onPress={() => shift(1)} hitSlop={10}><Text style={styles.arrow}>›</Text></Pressable>
       </View>
       <View style={styles.row}>
-        {WEEK.map((w, i) => <Text key={w} style={[styles.week, i === 0 && { color: '#FF7A8A' }, i === 6 && { color: '#7AB8FF' }]}>{w}</Text>)}
+        {WEEK.map((w, i) => <Text key={w} style={[styles.week, i === 0 && { color: '#FF7A8A' }, i === 6 && { color: '#7AB8FF' }]}>{t(w)}</Text>)}
       </View>
       <View style={styles.grid}>
         {cells.map((d, i) => {
@@ -50,8 +51,8 @@ export function Calendar({ value, onChange, onDone }: { value: DateSpan; onChang
         })}
       </View>
       <View style={styles.actions}>
-        <Pressable onPress={() => { setPicking(null); onChange(null); }} style={styles.reset}><Text style={styles.resetText}>전체 기간</Text></Pressable>
-        <Pressable onPress={onDone} style={styles.done}><Text style={styles.doneText}>{value ? `${spanLabel(value)} 보기` : '닫기'}</Text></Pressable>
+        <Pressable onPress={() => { setPicking(null); onChange(null); }} style={styles.reset}><Text style={styles.resetText}>{t('전체 기간')}</Text></Pressable>
+        <Pressable onPress={onDone} style={styles.done}><Text style={styles.doneText}>{value ? t('{span} 보기', { span: spanLabel(value) }) : t('닫기')}</Text></Pressable>
       </View>
     </View>
   );

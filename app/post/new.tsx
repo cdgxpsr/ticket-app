@@ -8,6 +8,7 @@ import { Header } from '../../src/components/Header';
 import { Chip } from '../../src/components/Social';
 import { BOARDS, repo, type Board } from '../../src/data';
 import { colors, fonts } from '../../src/theme';
+import { t } from '../../src/i18n';
 
 export default function NewPost() {
   const params = useLocalSearchParams<{ board?: string }>();
@@ -21,7 +22,7 @@ export default function NewPost() {
 
   const addPhotos = async () => {
     const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
-    if (!perm.granted) return Alert.alert('사진 접근을 허용해 주세요', '설정 > 냥냥수첩 > 사진에서 바꿀 수 있어요.');
+    if (!perm.granted) return Alert.alert(t('사진 접근을 허용해 주세요'), t('설정 > 냥냥수첩 > 사진에서 바꿀 수 있어요.'));
     const res = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ['images'], allowsMultipleSelection: true, selectionLimit: MAX - images.length, quality: 0.7, exif: false });
     if (!res.canceled) setImages((l) => [...l, ...res.assets.map((a) => a.uri)].slice(0, MAX));
   };
@@ -34,7 +35,7 @@ export default function NewPost() {
       const p = await repo.createPost({ board, title: title.trim(), body: body.trim(), images });
       router.replace(`/post/${p.id}`);
     } catch {
-      Alert.alert('올리지 못했어요', '사진이 너무 크거나 연결이 불안정해요. 다시 시도해 주세요.');
+      Alert.alert(t('올리지 못했어요'), t('사진이 너무 크거나 연결이 불안정해요. 다시 시도해 주세요.'));
     } finally {
       setBusy(false);
     }
@@ -42,30 +43,30 @@ export default function NewPost() {
 
   return (
     <SafeAreaView style={styles.safe}>
-      <Header title="글쓰기" right={<Pressable onPress={submit} disabled={!ok}>{busy ? <ActivityIndicator color={colors.accent} /> : <Text style={[styles.done, !ok && { opacity: 0.4 }]}>등록</Text>}</Pressable>} />
+      <Header title={t('글쓰기')} right={<Pressable onPress={submit} disabled={!ok}>{busy ? <ActivityIndicator color={colors.accent} /> : <Text style={[styles.done, !ok && { opacity: 0.4 }]}>{t('등록')}</Text>}</Pressable>} />
       <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
         <ScrollView contentContainerStyle={styles.body} keyboardShouldPersistTaps="handled">
           <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
-            {BOARDS.map((b) => <Chip key={b} label={b} on={b === board} onPress={() => setBoard(b)} />)}
+            {BOARDS.map((b) => <Chip key={b} label={t(b)} on={b === board} onPress={() => setBoard(b)} />)}
           </View>
-          <TextInput value={title} onChangeText={setTitle} placeholder="제목" placeholderTextColor="#8E859A" style={styles.title} maxLength={60} />
+          <TextInput value={title} onChangeText={setTitle} placeholder={t('제목')} placeholderTextColor="#8E859A" style={styles.title} maxLength={60} />
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8 }}>
             {images.length < MAX && (
-              <Pressable style={styles.add} onPress={addPhotos} accessibilityLabel="사진 추가">
+              <Pressable style={styles.add} onPress={addPhotos} accessibilityLabel={t('사진 추가')}>
                 <Text style={styles.addIcon}>＋</Text>
-                <Text style={styles.addText}>사진 {images.length}/{MAX}</Text>
+                <Text style={styles.addText}>{t('사진 {n}/{max}', { n: images.length, max: MAX })}</Text>
               </Pressable>
             )}
             {images.map((u) => (
               <View key={u}>
                 <Image source={{ uri: u }} style={styles.thumb} />
-                <Pressable style={styles.remove} onPress={() => setImages((l) => l.filter((x) => x !== u))} hitSlop={6} accessibilityLabel="사진 빼기">
+                <Pressable style={styles.remove} onPress={() => setImages((l) => l.filter((x) => x !== u))} hitSlop={6} accessibilityLabel={t('사진 빼기')}>
                   <Text style={styles.removeText}>×</Text>
                 </Pressable>
               </View>
             ))}
           </ScrollView>
-          <TextInput value={body} onChangeText={setBody} placeholder="관람 이야기를 나눠 주세요" placeholderTextColor="#8E859A" style={styles.input} multiline textAlignVertical="top" />
+          <TextInput value={body} onChangeText={setBody} placeholder={t('관람 이야기를 나눠 주세요')} placeholderTextColor="#8E859A" style={styles.input} multiline textAlignVertical="top" />
         </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>

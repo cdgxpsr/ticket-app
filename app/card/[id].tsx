@@ -10,6 +10,7 @@ import { StoryShareView } from '../../src/components/StoryShareView';
 import { TicketCard } from '../../src/components/TicketCard';
 import { getCard } from '../../src/lib/cards';
 import { colors, fonts } from '../../src/theme';
+import { t } from '../../src/i18n';
 
 export default function CardDetail() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -26,9 +27,9 @@ export default function CardDetail() {
     setBusy(true);
     try {
       const uri = await capture();
-      if (await Sharing.isAvailableAsync()) await Sharing.shareAsync(uri, { mimeType: 'image/png', dialogTitle: '공유하기', UTI: 'public.png' });
+      if (await Sharing.isAvailableAsync()) await Sharing.shareAsync(uri, { mimeType: 'image/png', dialogTitle: t('공유하기'), UTI: 'public.png' });
     } catch {
-      Alert.alert('공유하지 못했어요', '잠시 후 다시 시도해 주세요.');
+      Alert.alert(t('공유하지 못했어요'), t('잠시 후 다시 시도해 주세요.'));
     } finally {
       setBusy(false);
     }
@@ -40,13 +41,13 @@ export default function CardDetail() {
     try {
       const perm = await MediaLibrary.requestPermissionsAsync(true);
       if (!perm.granted) {
-        Alert.alert('사진 접근 권한이 필요해요', '설정에서 사진 추가 권한을 허용해 주세요.');
+        Alert.alert(t('사진 접근 권한이 필요해요'), t('설정에서 사진 추가 권한을 허용해 주세요.'));
         return;
       }
       await MediaLibrary.saveToLibraryAsync(await capture());
-      Alert.alert('저장했어요', '사진 앨범에서 확인할 수 있어요.');
+      Alert.alert(t('저장했어요'), t('사진 앨범에서 확인할 수 있어요.'));
     } catch {
-      Alert.alert('저장하지 못했어요', '잠시 후 다시 시도해 주세요.');
+      Alert.alert(t('저장하지 못했어요'), t('잠시 후 다시 시도해 주세요.'));
     } finally {
       setBusy(false);
     }
@@ -55,12 +56,12 @@ export default function CardDetail() {
   return (
     <SafeAreaView style={styles.safe}>
       <View style={styles.top}>
-        <Pressable onPress={() => (router.canGoBack() ? router.back() : router.replace('/tickets'))}><Text style={styles.link}>닫기</Text></Pressable>
-        <Text style={styles.title}>티켓 카드</Text>
+        <Pressable onPress={() => (router.canGoBack() ? router.back() : router.replace('/tickets'))}><Text style={styles.link}>{t('닫기')}</Text></Pressable>
+        <Text style={styles.title}>{t('티켓 카드')}</Text>
         <View style={{ width: 32 }} />
       </View>
       {!card ? (
-        <Text style={[styles.desc, { padding: 20 }]}>카드를 찾을 수 없어요.</Text>
+        <Text style={[styles.desc, { padding: 20 }]}>{t('카드를 찾을 수 없어요.')}</Text>
       ) : (
         <ScrollView contentContainerStyle={styles.body}>
           <View style={styles.stampWrap}>
@@ -68,17 +69,17 @@ export default function CardDetail() {
           </View>
           <TicketCard ticket={card} large />
           <Pressable onPress={shareStory} style={[styles.btn, styles.primary]} disabled={busy}>
-            <Text style={[styles.btnText, { color: colors.bg }]}>공유하기</Text>
+            <Text style={[styles.btnText, { color: colors.bg }]}>{t('공유하기')}</Text>
           </Pressable>
           <Pressable onPress={() => router.push(`/review/${card.id}`)} style={styles.btn}>
-            <Text style={styles.btnText}>후기 쓰기</Text>
+            <Text style={styles.btnText}>{t('후기 쓰기')}</Text>
           </Pressable>
           <Pressable onPress={saveStory} style={styles.btn} disabled={busy}>
-            <Text style={styles.btnText}>이미지 저장</Text>
+            <Text style={styles.btnText}>{t('이미지 저장')}</Text>
           </Pressable>
           {!!photo && (
             <Pressable onPress={() => setShowOriginal(true)} style={styles.btn}>
-              <Text style={styles.btnText}>원본 사진 보기</Text>
+              <Text style={styles.btnText}>{t('원본 사진 보기')}</Text>
             </Pressable>
           )}
         </ScrollView>
@@ -90,7 +91,7 @@ export default function CardDetail() {
       )}
       <Modal visible={showOriginal} animationType="fade" onRequestClose={() => setShowOriginal(false)}>
         <SafeAreaView style={[styles.safe, { backgroundColor: '#000' }]}>
-          <Pressable onPress={() => setShowOriginal(false)} style={{ padding: 16 }}><Text style={styles.link}>닫기</Text></Pressable>
+          <Pressable onPress={() => setShowOriginal(false)} style={{ padding: 16 }}><Text style={styles.link}>{t('닫기')}</Text></Pressable>
           {!!photo && <Image source={{ uri: photo }} style={{ flex: 1 }} resizeMode="contain" />}
         </SafeAreaView>
       </Modal>

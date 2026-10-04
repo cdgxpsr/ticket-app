@@ -4,15 +4,16 @@ import Svg, { Path } from 'react-native-svg';
 import type { Comment, Show } from '../data/types';
 import { colors, fonts } from '../theme';
 import { CatAvatar } from './CatAvatar';
+import { t } from '../i18n';
 
-export function timeAgo(t: number) {
-  const m = Math.floor((Date.now() - t) / 60000);
-  if (m < 1) return '방금';
-  if (m < 60) return `${m}분 전`;
+export function timeAgo(ts: number) {
+  const m = Math.floor((Date.now() - ts) / 60000);
+  if (m < 1) return t('방금');
+  if (m < 60) return t('{n}분 전', { n: m });
   const h = Math.floor(m / 60);
-  if (h < 24) return `${h}시간 전`;
+  if (h < 24) return t('{n}시간 전', { n: h });
   const d = Math.floor(h / 24);
-  return d === 1 ? '어제' : `${d}일 전`;
+  return d === 1 ? t('어제') : t('{n}일 전', { n: d });
 }
 
 export const CATEGORY_COLORS: Record<string, string> = {
@@ -53,8 +54,8 @@ export function Stars({ value, size = 16, onChange }: { value: number; size?: nu
             <Star fill={fill} size={size} />
             <View style={StyleSheet.absoluteFill}>
               <View style={{ flexDirection: 'row', flex: 1 }}>
-                <Pressable style={{ flex: 1 }} onPress={() => onChange(i - 0.5)} accessibilityLabel={`${i - 0.5}점`} />
-                <Pressable style={{ flex: 1 }} onPress={() => onChange(i)} accessibilityLabel={`${i}점`} />
+                <Pressable style={{ flex: 1 }} onPress={() => onChange(i - 0.5)} accessibilityLabel={t('{n}점', { n: i - 0.5 })} />
+                <Pressable style={{ flex: 1 }} onPress={() => onChange(i)} accessibilityLabel={t('{n}점', { n: i })} />
               </View>
             </View>
           </View>
@@ -74,7 +75,7 @@ export function MiniTicket({ show }: { show: Show }) {
 }
 
 export function CommentList({ comments }: { comments: Comment[] }) {
-  if (!comments.length) return <Text style={styles.muted}>아직 댓글이 없어요</Text>;
+  if (!comments.length) return <Text style={styles.muted}>{t('아직 댓글이 없어요')}</Text>;
   return (
     <View style={{ gap: 14 }}>
       {comments.map((c) => (

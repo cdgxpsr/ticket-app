@@ -1,5 +1,6 @@
 import { listSaved } from '../lib/saved';
 import { ensureSession, supabase } from '../lib/supabase';
+import { getLang, t } from '../i18n';
 
 export const KOBIS_CREDIT = '출처: 영화관입장권통합전산망(KOBIS)';
 export const KMDB_CREDIT = '포스터: 한국영상자료원 KMDb';
@@ -15,9 +16,22 @@ export type CultureEvent = {
   link_url: string | null; lat: number | null; lng: number | null;
   booking_links?: { name: string; url: string }[] | null;
   poster_source?: 'kmdb' | null;
+  /** Machine translations filled by sync-culture: { en: { title, summary }, ja: {...}, 'zh-Hans': {...} }. */
+  i18n?: Partial<Record<'en' | 'ja' | 'zh-Hans', { title?: string | null; summary?: string | null }>> | null;
 };
 
 const COLS = 'id, source, category, title, summary, image_url, venue, region, address, start_date, end_date, link_url, lat, lng, booking_links';
+const COLS_I18N = `${COLS}, i18n`;
+
+/** Title/summary in the current app language (from `i18n`), falling back to the Korean original. */
+export const evTitle = (e: CultureEvent) => { const l = getLang(); return (l !== 'ko' && e.i18n?.[l]?.title) || e.title; };
+export const evSummary = (e: CultureEvent) => { const l = getLang(); return (l !== 'ko' && e.i18n?.[l]?.summary) || e.summary; };
+
+/** Runs a select with the i18n column, retrying without it if the migration is not applied yet. */
+async function selectWithI18n(run: (cols: string) => PromiseLike<{ data: unknown; error: unknown }>): Promise<{ data: unknown; error: unknown }> {
+  const r = await run(COLS_I18N);
+  return r.error ? run(COLS) : r;
+}
 const ev = (e: Partial<CultureEvent> & Pick<CultureEvent, 'id' | 'category' | 'title' | 'region'>): CultureEvent => ({
   source: 'sample', summary: null, image_url: null, venue: null, address: null, start_date: null, end_date: null, link_url: null, lat: null, lng: null, ...e,
 });
@@ -46,8 +60,8 @@ export async function getNearbyStays(e: CultureEvent): Promise<CultureEvent[]> {
   if (e.lat == null || e.lng == null) return [];
   let rows: CultureEvent[] = [];
   try {
-    const { data } = await supabase.from('culture_events').select(COLS).eq('category', '숙박').eq('region', e.region)
-      .not('lat', 'is', null).not('lng', 'is', null).limit(300);
+    const { data } = await selectWithI18n((cols) => supabase.from('culture_events').select(cols).eq('category', '숙박').eq('region', e.region)
+      .not('lat', 'is', null).not('lng', 'is', null).limit(300));
     rows = (data as CultureEvent[] | null) ?? [];
   } catch {
     // offline
@@ -83,12 +97,15 @@ export async function getCultureEvents(region: string, category: string): Promis
   let others: CultureEvent[] | undefined;
   if (category !== '영화') {
     try {
-      let q = supabase.from('culture_events').select(COLS).neq('category', '영화').order('start_date', { ascending: false, nullsFirst: false }).limit(200);
-      if (region !== '전국') q = q.eq('region', region).limit(600);
-      if (category !== '전체') q = q.eq('category', category);
-      const { data, error } = await q;
+      const { data, error } = await selectWithI18n((cols) => {
+        let q = supabase.from('culture_events').select(cols).neq('category', '영화').order('start_date', { ascending: false, nullsFirst: false }).limit(200);
+        if (region !== '전국') q = q.eq('region', region).limit(600);
+        if (category !== '전체') q = q.eq('category', category);
+        return q;
+      });
       if (error) throw error;
-      if (data && data.length) others = data as CultureEvent[];
+      const rows = data as CultureEvent[] | null;
+      if (rows && rows.length) others = rows;
     } catch {
       // offline or table missing
     }
@@ -103,7 +120,7 @@ export async function getCultureEvent(id: string): Promise<CultureEvent | undefi
   const s = SAMPLE_EVENTS.find((e) => e.id === id) ?? liveMovies.get(id);
   if (s) return s;
   try {
-    const { data } = await supabase.from('culture_events').select(COLS).eq('id', id).maybeSingle();
+    const { data } = await selectWithI18n((cols) => supabase.from('culture_events').select(cols).eq('id', id).maybeSingle());
     if (data) return data as CultureEvent;
   } catch {
     // offline: fall through to saved snapshot
@@ -113,14 +130,14 @@ export async function getCultureEvent(id: string): Promise<CultureEvent | undefi
 
 export const formatPeriod = (e: CultureEvent) => {
   const f = (s: string | null) => (s ? s.replace(/-/g, '.') : '');
-  if (e.category === '영화') return e.start_date ? `${f(e.start_date)} 개봉 · 상영 중` : '상영 중';
+  if (e.category === '영화') return e.start_date ? t('{date} 개봉 · 상영 중', { date: f(e.start_date) }) : t('상영 중');
   // Places (museums, activities, stays) carry no dates, only a far-off end we set at sync time.
   if (!e.start_date) {
     const farOff = !e.end_date || Date.parse(e.end_date) - Date.now() > 180 * 86400000;
-    return farOff ? '상시 운영' : `~ ${f(e.end_date)}`;
+    return farOff ? t('상시 운영') : `~ ${f(e.end_date)}`;
   }
   if (!e.end_date) return `${f(e.start_date)} ~`;
-  if (e.start_date === e.end_date) return `${f(e.start_date)} (하루)`;
+  if (e.start_date === e.end_date) return t('{date} (하루)', { date: f(e.start_date) });
   return `${f(e.start_date)} ~ ${f(e.end_date)}`;
 };
 
@@ -159,7 +176,7 @@ export async function getEventReviews(eventId: string): Promise<EventReview[]> {
     const ids = [...new Set(data.map((r) => r.author as string))];
     const { data: profs } = await supabase.from('profiles').select('id, nickname').in('id', ids);
     const nick = new Map((profs ?? []).map((p) => [p.id as string, p.nickname as string]));
-    return data.map((r) => ({ ...(r as Omit<EventReview, 'nickname' | 'mine'>), nickname: nick.get(r.author as string) ?? '냥이', mine: r.author === me }));
+    return data.map((r) => ({ ...(r as Omit<EventReview, 'nickname' | 'mine'>), nickname: nick.get(r.author as string) ?? t('냥이'), mine: r.author === me }));
   } catch {
     return [];
   }

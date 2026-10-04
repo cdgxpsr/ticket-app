@@ -8,6 +8,7 @@ import { CatAvatar } from '../../src/components/CatAvatar';
 import { getAvatar, getUnlockedItems, saveAvatar } from '../../src/lib/avatar';
 import { balance, buy, CATALOG, CHURU_PACKS, claimDaily, isOwned, itemLabel, PER_TICKET, SHOP_SLOTS, type ShopItem, type Slot } from '../../src/lib/shop';
 import { colors, fonts } from '../../src/theme';
+import { t } from '../../src/i18n';
 
 const TAG_COLOR: Record<string, string> = { NEW: '#4DC3FF', HOT: '#FF6B8B', 한정: '#FFC94D' };
 const ALL: Record<Slot, readonly string[]> = { face: FACES, body: BODIES, back: BACKS, bg: BGS, coat: COATS, expr: EXPRS };
@@ -40,7 +41,7 @@ export default function Shop() {
     const a = getAvatar();
     setSaved(a);
     setDraft(a);
-    if (claimDaily()) setTimeout(() => Alert.alert('출석 보상', '오늘 냥냥상점 방문으로 츄르 10개를 받았어요!'), 300);
+    if (claimDaily()) setTimeout(() => Alert.alert(t('출석 보상'), t('오늘 냥냥상점 방문으로 츄르 10개를 받았어요!')), 300);
     setCoins(balance());
     getUnlockedItems().then(setUnlocked).catch(() => {});
   }, []));
@@ -62,10 +63,10 @@ export default function Shop() {
   };
 
   const purchase = () => {
-    if (cost > coins) return Alert.alert('츄르가 부족해요', `${cost - coins}개가 더 필요해요.\n티켓을 기록하면 +${PER_TICKET}, 후기를 남기면 +50개를 받아요.`);
-    Alert.alert('구매할까요?', `${tried.map((i) => i.label).join(', ')}\n츄르 ${cost}개`, [
-      { text: '취소', style: 'cancel' },
-      { text: '구매하고 착용', onPress: () => { tried.forEach(buy); saveAvatar(draft); setSaved(draft); setCoins(balance()); bump((n) => n + 1); } },
+    if (cost > coins) return Alert.alert(t('츄르가 부족해요'), t('{n}개가 더 필요해요.\n티켓을 기록하면 +{per}, 후기를 남기면 +50개를 받아요.', { n: cost - coins, per: PER_TICKET }));
+    Alert.alert(t('구매할까요?'), `${tried.map((i) => itemLabel(i.slot, i.value)).join(', ')}\n${t('츄르 {n}개', { n: cost })}`, [
+      { text: t('취소'), style: 'cancel' },
+      { text: t('구매하고 착용'), onPress: () => { tried.forEach(buy); saveAvatar(draft); setSaved(draft); setCoins(balance()); bump((n) => n + 1); } },
     ]);
   };
   const wear = () => { saveAvatar(draft); setSaved(draft); };
@@ -75,12 +76,12 @@ export default function Shop() {
     const on = draft[s] === v;
     return (
       <Pressable key={v} style={[styles.cell, on && styles.cellOn]} onPress={() => toggle(s, v)}
-        accessibilityLabel={`${itemLabel(s, v)}${has ? ', 보유 중' : item ? `, 츄르 ${item.price}` : ''}`}>
-        {mode === 'shop' && !!item?.tag && !has && <View style={[styles.tag, { backgroundColor: TAG_COLOR[item.tag] }]}><Text style={styles.tagText}>{item.tag}</Text></View>}
-        {mode === 'inv' && saved[s] === v && <View style={[styles.tag, { backgroundColor: colors.accent }]}><Text style={styles.tagText}>착용 중</Text></View>}
+        accessibilityLabel={`${itemLabel(s, v)}${has ? t(', 보유 중') : item ? `, ${t('츄르 {n}개', { n: item.price })}` : ''}`}>
+        {mode === 'shop' && !!item?.tag && !has && <View style={[styles.tag, { backgroundColor: TAG_COLOR[item.tag] }]}><Text style={styles.tagText}>{t(item.tag)}</Text></View>}
+        {mode === 'inv' && saved[s] === v && <View style={[styles.tag, { backgroundColor: colors.accent }]}><Text style={styles.tagText}>{t('착용 중')}</Text></View>}
         <CatAvatar size={76} avatar={{ ...draft, [s]: v }} />
         <Text style={styles.cellLabel} numberOfLines={1}>{itemLabel(s, v)}</Text>
-        {mode === 'shop' && (has ? <Text style={styles.owned}>보유 중</Text> : (
+        {mode === 'shop' && (has ? <Text style={styles.owned}>{t('보유 중')}</Text> : (
           <View style={styles.price}><Churu size={12} /><Text style={styles.priceText}>{item?.price}</Text></View>
         ))}
       </Pressable>
@@ -91,40 +92,40 @@ export default function Shop() {
     <SafeAreaView style={styles.safe} edges={['top']}>
       <View style={styles.head}>
         <View style={styles.modes}>
-          {([['shop', '상점'], ['inv', '인벤토리']] as const).map(([m, label]) => (
+          {([['shop', t('상점')], ['inv', t('인벤토리')]] as const).map(([m, label]) => (
             <Pressable key={m} onPress={() => switchMode(m)} hitSlop={6} accessibilityRole="tab" accessibilityState={{ selected: mode === m }}>
               <Text style={[styles.mode, mode === m && styles.modeOn]}>{label}</Text>
             </Pressable>
           ))}
         </View>
-        <Pressable style={styles.wallet} onPress={() => setCharge(true)} accessibilityLabel={`츄르 ${coins}개, 충전하기`}>
+        <Pressable style={styles.wallet} onPress={() => setCharge(true)} accessibilityLabel={t('츄르 {n}개, 충전하기', { n: coins })}>
           <Churu /><Text style={styles.walletText}>{coins.toLocaleString()}</Text><Text style={styles.plus}>＋</Text>
         </Pressable>
       </View>
       <View style={styles.stage}>
         <CatAvatar size={170} avatar={draft} />
-        <Text style={styles.fitting}>{mode === 'shop' ? '피팅룸 · 눌러서 미리 입어 보세요' : `보유 아이템 ${ownedCount}개 · 눌러서 착용해요`}</Text>
-        {changed && <Pressable style={styles.reset} onPress={() => setDraft(saved)}><Text style={styles.resetText}>원래대로</Text></Pressable>}
+        <Text style={styles.fitting}>{mode === 'shop' ? t('피팅룸 · 눌러서 미리 입어 보세요') : t('보유 아이템 {n}개 · 눌러서 착용해요', { n: ownedCount })}</Text>
+        {changed && <Pressable style={styles.reset} onPress={() => setDraft(saved)}><Text style={styles.resetText}>{t('원래대로')}</Text></Pressable>}
       </View>
       <View style={styles.tabsWrap}>
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.tabs}>
           {SHOP_SLOTS.map((s) => (
             <Pressable key={s.key} onPress={() => setSlot(s.key)} style={[styles.tab, slot === s.key && styles.tabOn]}>
-              <Text style={[styles.tabText, slot === s.key && styles.tabTextOn]}>{s.label}</Text>
+              <Text style={[styles.tabText, slot === s.key && styles.tabTextOn]}>{t(s.label)}</Text>
             </Pressable>
           ))}
         </ScrollView>
       </View>
       <ScrollView contentContainerStyle={styles.grid}>
         {mode === 'shop' ? [...free.map((v) => cell(slot, v)), ...shopItems.map((i) => cell(i.slot, i.value, i))] : invItems.map((v) => cell(slot, v))}
-        <Text style={styles.how}>츄르 모으는 법 · 티켓 기록 +{PER_TICKET} · 후기 작성 +50 · 매일 상점 방문 +10</Text>
+        <Text style={styles.how}>{t('츄르 모으는 법 · 티켓 기록 +{per} · 후기 작성 +50 · 매일 상점 방문 +10', { per: PER_TICKET })}</Text>
       </ScrollView>
       {changed && (
         <View style={styles.bar}>
           {cost > 0 ? (
-            <Pressable style={styles.buy} onPress={purchase}><Churu size={16} /><Text style={styles.buyText}>{cost.toLocaleString()} · 구매하고 착용</Text></Pressable>
+            <Pressable style={styles.buy} onPress={purchase}><Churu size={16} /><Text style={styles.buyText}>{cost.toLocaleString()} · {t('구매하고 착용')}</Text></Pressable>
           ) : (
-            <Pressable style={styles.buy} onPress={wear}><Text style={styles.buyText}>이대로 착용하기</Text></Pressable>
+            <Pressable style={styles.buy} onPress={wear}><Text style={styles.buyText}>{t('이대로 착용하기')}</Text></Pressable>
           )}
         </View>
       )}
@@ -132,29 +133,29 @@ export default function Shop() {
         <Pressable style={styles.backdrop} onPress={() => setCharge(false)}>
           <Pressable style={styles.sheet} onPress={() => {}}>
             <View style={styles.sheetHead}>
-              <Text style={styles.sheetTitle}>츄르 충전</Text>
+              <Text style={styles.sheetTitle}>{t('츄르 충전')}</Text>
               <View style={styles.wallet}><Churu /><Text style={styles.walletText}>{coins.toLocaleString()}</Text></View>
             </View>
             <Pressable style={styles.pass}
-              onPress={() => Alert.alert('냥냥 패스는 정식 출시 때 열려요', '월 3,900원 · 매일 출석하면 츄르 50개 + 매달 바뀌는 패스 전용 아이템 1개.\n지금은 테스트 기간이라 결제를 받지 않아요.')}>
+              onPress={() => Alert.alert(t('냥냥 패스는 정식 출시 때 열려요'), t('월 3,900원 · 매일 출석하면 츄르 50개 + 매달 바뀌는 패스 전용 아이템 1개.\n지금은 테스트 기간이라 결제를 받지 않아요.'))}>
               <View style={{ flex: 1, gap: 2 }}>
-                <Text style={styles.passTitle}>냥냥 패스 <Text style={styles.passBadge}>월 3,900원</Text></Text>
-                <Text style={styles.passDesc}>매일 츄르 50개 · 매달 패스 전용 아이템 · 한 달이면 츄르 1,500개</Text>
+                <Text style={styles.passTitle}>{t('냥냥 패스')} <Text style={styles.passBadge}>{t('월 3,900원')}</Text></Text>
+                <Text style={styles.passDesc}>{t('매일 츄르 50개 · 매달 패스 전용 아이템 · 한 달이면 츄르 1,500개')}</Text>
               </View>
               <Text style={styles.passGo}>›</Text>
             </Pressable>
             {CHURU_PACKS.map((p) => (
               <Pressable key={p.amount} style={styles.pack}
-                onPress={() => Alert.alert('결제는 정식 출시 때 열려요', '지금은 테스트 기간이라 결제를 받지 않아요.\n티켓 기록, 후기, 매일 방문으로 츄르를 모아 보세요!')}>
+                onPress={() => Alert.alert(t('결제는 정식 출시 때 열려요'), t('지금은 테스트 기간이라 결제를 받지 않아요.\n티켓 기록, 후기, 매일 방문으로 츄르를 모아 보세요!'))}>
                 <Churu size={22} />
                 <View style={{ flex: 1 }}>
-                  <Text style={styles.packAmount}>츄르 {p.amount.toLocaleString()}개{p.bonus ? <Text style={styles.bonus}>  +{p.bonus} 보너스</Text> : null}</Text>
+                  <Text style={styles.packAmount}>{t('츄르 {n}개', { n: p.amount.toLocaleString() })}{p.bonus ? <Text style={styles.bonus}>  {t('+{n} 보너스', { n: p.bonus })}</Text> : null}</Text>
                   {!!p.tag && <Text style={styles.best}>{p.tag}</Text>}
                 </View>
                 <View style={styles.priceBtn}><Text style={styles.priceBtnText}>{p.price}</Text></View>
               </Pressable>
             ))}
-            <Text style={styles.how}>무료로 모으기 · 티켓 기록 +{PER_TICKET} · 후기 작성 +50 · 매일 상점 방문 +10</Text>
+            <Text style={styles.how}>{t('무료로 모으기 · 티켓 기록 +{per} · 후기 작성 +50 · 매일 상점 방문 +10', { per: PER_TICKET })}</Text>
           </Pressable>
         </Pressable>
       </Modal>

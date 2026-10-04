@@ -7,6 +7,7 @@ import { Header } from '../src/components/Header';
 import { showToast } from '../src/components/Social';
 import { repo, type User } from '../src/data';
 import { colors, fonts } from '../src/theme';
+import { t } from '../src/i18n';
 
 export default function Friends() {
   const [friends, setFriends] = useState<User[]>([]);
@@ -26,28 +27,28 @@ export default function Friends() {
       setCode('');
       setError('');
       setFriends(await repo.getFriends());
-      showToast(`${u.name}님과 친구가 되었어요`);
+      showToast(t('{name}님과 친구가 되었어요', { name: u.name }));
     } catch (e) {
-      setError(e instanceof Error ? e.message : '추가하지 못했어요');
+      setError(e instanceof Error ? e.message : t('추가하지 못했어요'));
     }
   };
 
   return (
     <SafeAreaView style={styles.safe}>
-      <Header title="친구" />
+      <Header title={t('친구')} />
       <ScrollView contentContainerStyle={styles.body} keyboardShouldPersistTaps="handled">
         <View style={styles.box}>
-          <Text style={styles.label}>초대 코드로 친구 추가</Text>
+          <Text style={styles.label}>{t('초대 코드로 친구 추가')}</Text>
           <View style={{ flexDirection: 'row', gap: 8 }}>
-            <TextInput value={code} onChangeText={(t) => { setCode(t); setError(''); }} placeholder="코드 입력" placeholderTextColor="#8E859A" autoCapitalize="characters" autoCorrect={false} style={styles.input} onSubmitEditing={add} />
-            <Pressable onPress={add} style={[styles.btn, !code.trim() && { opacity: 0.4 }]}><Text style={styles.btnText}>추가</Text></Pressable>
+            <TextInput value={code} onChangeText={(v) => { setCode(v); setError(''); }} placeholder={t('코드 입력')} placeholderTextColor="#8E859A" autoCapitalize="characters" autoCorrect={false} style={styles.input} onSubmitEditing={add} />
+            <Pressable onPress={add} style={[styles.btn, !code.trim() && { opacity: 0.4 }]}><Text style={styles.btnText}>{t('추가')}</Text></Pressable>
           </View>
           {!!error && <Text style={styles.error}>{error}</Text>}
-          {!!me && <Text style={styles.muted}>내 초대 코드 {me.code}</Text>}
+          {!!me && <Text style={styles.muted}>{t('내 초대 코드 {code}', { code: me.code })}</Text>}
         </View>
-        <Text style={styles.section}>친구 {friends.length}</Text>
+        <Text style={styles.section}>{t('친구 {n}', { n: friends.length })}</Text>
         <View style={styles.box}>
-          {friends.length === 0 && <Text style={styles.muted}>아직 친구가 없어요</Text>}
+          {friends.length === 0 && <Text style={styles.muted}>{t('아직 친구가 없어요')}</Text>}
           {friends.map((u, i) => (
             <View key={u.id} style={[styles.row, i > 0 && styles.divider]}>
               <CatAvatar size={40} avatar={u.avatar} />
