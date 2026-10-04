@@ -49,7 +49,6 @@ export function Calendar({ value, onChange, onDone }: { value: DateSpan; onChang
           );
         })}
       </View>
-      <Text style={styles.hint}>{picking ? '끝나는 날을 눌러 주세요 (같은 날을 누르면 하루만)' : '날짜를 누르고, 기간이면 끝나는 날도 눌러 주세요'}</Text>
       <View style={styles.actions}>
         <Pressable onPress={() => { setPicking(null); onChange(null); }} style={styles.reset}><Text style={styles.resetText}>전체 기간</Text></Pressable>
         <Pressable onPress={onDone} style={styles.done}><Text style={styles.doneText}>{value ? `${spanLabel(value)} 보기` : '닫기'}</Text></Pressable>

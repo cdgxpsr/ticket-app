@@ -75,8 +75,27 @@ function background(kind: Bg): string {
 
 function backDeco(kind: Back): string {
   if (kind === 'wings') {
-    const w = `fill="#FFFFFF" ${o()}`;
-    return `<path d="M66 132c-30-6-46-30-40-52 10 10 22 12 30 10-8 10-4 24 10 30z" ${w}/><path d="M134 132c30-6 46-30 40-52-10 10-22 12-30 10 8 10 4 24-10 30z" ${w}/>`;
+    // Big layered feather wings with a soft glow: the 1,000-츄르 item should read from across the room.
+    const glow = '<ellipse cx="100" cy="110" rx="98" ry="70" fill="#FFF6C8" opacity="0.55"/>';
+    const wing = (m: 1 | -1) => {
+      const x = (v: number) => 100 + m * v;
+      const f = (pts: [number, number][], fill: string) => `<path d="M${pts.map(([a, b]) => `${x(a)} ${b}`).join(' L')} Z" fill="${fill}" ${o('', 4)}/>`;
+      return f([[44, 150], [98, 128], [99, 80], [94, 30], [80, 10], [66, 30], [60, 70]], '#FFFFFF') +
+        f([[50, 146], [96, 132], [97, 104], [76, 100], [58, 112]], '#EAF4FF') +
+        `<path d="M${x(70)} 40l${m * 22} -18M${x(68)} 64l${m * 28} -14M${x(66)} 90l${m * 32} -8M${x(64)} 114l${m * 32} 2" stroke="#BFD9F2" stroke-width="3" fill="none"/>`;
+    };
+    const spark = (cx: number, cy: number, r: number) => `<path d="M${cx} ${cy - r}l${r * 0.3} ${r * 0.7} ${r * 0.7} ${r * 0.3}-${r * 0.7} ${r * 0.3}-${r * 0.3} ${r * 0.7}-${r * 0.3}-${r * 0.7}-${r * 0.7}-${r * 0.3} ${r * 0.7}-${r * 0.3}z" fill="#FFD24D"/>`;
+    return glow + wing(-1) + wing(1) + spark(18, 50, 9) + spark(184, 64, 7) + spark(170, 30, 5);
+  }
+  if (kind === 'devilwings') {
+    const glow = '<ellipse cx="100" cy="110" rx="98" ry="70" fill="#7A2BBF" opacity="0.28"/>';
+    const wing = (m: 1 | -1) => {
+      const x = (v: number) => 100 + m * v;
+      const pts: [number, number][] = [[44, 150], [98, 130], [100, 98], [88, 100], [100, 62], [86, 64], [96, 12], [70, 40], [60, 80]];
+      return `<path d="M${pts.map(([p, q]) => `${x(p)} ${q}`).join(' L')} Z" fill="#5A2A8A" ${o('', 4)}/>` +
+        `<path d="M${x(62)} 120 L${x(96)} 104M${x(64)} 96 L${x(96)} 68M${x(66)} 70 L${x(92)} 22" stroke="#C084FF" stroke-width="3" fill="none"/>`;
+    };
+    return glow + wing(-1) + wing(1) + `<path d="M132 168q30 10 38 -14l6 4-4-12-10 4 6 2q-6 18-34 10z" fill="#3B1A55" ${o('', 3)}/>`;
   }
   if (kind === 'cape') return `<path d="M64 124c-10 20-14 44-10 60h92c4-16 0-40-10-60z" fill="#8E1F2F" ${o()}/>`;
   if (kind === 'balloon')
@@ -90,10 +109,6 @@ function backDeco(kind: Back): string {
   if (kind === 'rainbow')
     return ['#FF6B6B', '#FFB347', '#FFE066', '#7BD389', '#6EC1E4', '#9277FF'].map((c, i) => `<path d="M${20 + i * 7} 150a${80 - i * 7} ${80 - i * 7} 0 0 1 ${160 - i * 14} 0" fill="none" stroke="${c}" stroke-width="7"/>`).join('');
   if (kind === 'backpack') return `<rect x="50" y="118" width="100" height="58" rx="20" fill="#4DA36B" ${o()}/>`;
-  if (kind === 'devilwings') {
-    const w = `fill="#7A4A9A" ${o()}`;
-    return `<path d="M66 128c-24-2-42-20-44-44l12 8 6-14 8 12 8-10c0 18 2 34 10 48z" ${w}/><path d="M134 128c24-2 42-20 44-44l-12 8-6-14-8 12-8-10c0 18-2 34-10 48z" ${w}/>`;
-  }
   return '';
 }
 
@@ -131,7 +146,10 @@ function faceDeco(kind: Face): string {
     const r = (x: number, y: number, w: number, h: number, c = INK) => `<rect x="${x}" y="${y}" width="${w}" height="${h}" fill="${c}"/>`;
     return r(56, 76, 88, 7) + r(60, 83, 32, 7) + r(108, 83, 32, 7) + r(64, 90, 24, 7) + r(112, 90, 24, 7) + r(66, 83, 6, 6, '#fff') + r(114, 83, 6, 6, '#fff');
   }
-  if (kind === 'crown') return `<path d="M72 44l6-22 12 12 10-18 10 18 12-12 6 22z" fill="#FFD24D" ${o()}/><circle cx="100" cy="36" r="4" fill="#E04848"/>`;
+  if (kind === 'crown')
+    return `<path d="M64 50l4-34 16 14 16-24 16 24 16-14 4 34z" fill="#FFD24D" ${o()}/><rect x="64" y="44" width="72" height="10" rx="3" fill="#E8B20E" ${o('', 4)}/>` +
+      `<circle cx="68" cy="16" r="5" fill="#FFFFFF" ${O3}/><circle cx="100" cy="6" r="6" fill="#FFFFFF" ${O3}/><circle cx="132" cy="16" r="5" fill="#FFFFFF" ${O3}/>` +
+      `<path d="M100 26l7 8-7 8-7-8z" fill="#E04848" ${O3}/><circle cx="80" cy="38" r="4" fill="#3D8BFF" ${O3}/><circle cx="120" cy="38" r="4" fill="#3BB273" ${O3}/><path d="M74 24l10 6" stroke="#FFF6C8" stroke-width="3"/>`;
   if (kind === 'flower')
     return (
       [[0, -8], [8, 0], [0, 8], [-8, 0]].map(([dx, dy]) => `<circle cx="${142 + dx}" cy="${40 + dy}" r="7" fill="#FFB3C7" ${O3}/>`).join('') +
@@ -153,7 +171,8 @@ function faceDeco(kind: Face): string {
     return `<path d="M36 92q0-74 64-74t64 74" fill="none" stroke="${INK}" stroke-width="14"/><path d="M36 92q0-74 64-74t64 74" fill="none" stroke="#7C5CFF" stroke-width="8"/><rect x="22" y="76" width="22" height="34" rx="9" fill="#7C5CFF" ${O4}/><rect x="156" y="76" width="22" height="34" rx="9" fill="#7C5CFF" ${O4}/>`;
   if (kind === 'partyhat')
     return `<path d="M100 0l22 48H78z" fill="#4DC3FF" ${o()}/><circle cx="94" cy="30" r="3.5" fill="#FFD24D"/><circle cx="106" cy="40" r="3.5" fill="#FF7A9A"/><circle cx="102" cy="18" r="3" fill="#fff"/><circle cx="100" cy="0" r="6" fill="#FF7A9A" ${O3}/>`;
-  if (kind === 'halo') return '<ellipse cx="100" cy="14" rx="34" ry="8" fill="none" stroke="#FFD24D" stroke-width="7"/>';
+  if (kind === 'halo')
+    return '<ellipse cx="100" cy="16" rx="44" ry="13" fill="#FFF3B0" opacity="0.6"/><ellipse cx="100" cy="16" rx="36" ry="9" fill="none" stroke="#B88A10" stroke-width="10"/><ellipse cx="100" cy="16" rx="36" ry="9" fill="none" stroke="#FFD24D" stroke-width="6"/><ellipse cx="88" cy="10" rx="8" ry="2" fill="#FFFBE0"/><path d="M146 6l2 5 5 2-5 2-2 5-2-5-5-2 5-2z" fill="#FFD24D"/>';
   if (kind === 'heartglasses') {
     const h = (cx: number) => `<path d="M${cx} 98c-18-10-20-22-12-28 5-4 10-2 12 3 2-5 7-7 12-3 8 6 6 18-12 28z" fill="#FF4F7B" ${O3}/>`;
     return h(78) + h(122) + `<path d="M90 82h20" ${O4}/>`;
@@ -221,6 +240,7 @@ export function catSvg(opts: Partial<AvatarOptions> = {}): string {
   if (C.mask) s += '<path d="M56 104c4-20 24-22 44-14 20-8 40-6 44 14-4 20-24 28-44 28s-40-8-44-28z" fill="#FFFFFF"/>';
   if (C.patches)
     s += '<path d="M44 76c4-22 18-34 36-36-2 18-14 34-36 36z" fill="#4A403C"/><path d="M156 78c-4-22-18-34-36-36 2 18 14 34 36 36z" fill="#F2B36A"/>';
+  if (coat === 'gold') s += '<path d="M30 40l3 7 7 3-7 3-3 7-3-7-7-3 7-3zM172 60l2 5 5 2-5 2-2 5-2-5-5-2 5-2zM160 150l2 5 5 2-5 2-2 5-2-5-5-2 5-2z" fill="#FFF3B0"/>';
   if (coat === 'siamese') s += `<ellipse cx="100" cy="106" rx="30" ry="22" fill="${C.mark}" opacity="0.55"/>`;
   if (['cheese', 'gray', 'cream', 'brown', 'pink', 'mint', 'lavender', 'sky', 'lemon', 'gold'].includes(coat)) s += `<path d="M92 50v10M100 48v12M108 50v10" stroke="${C.mark}" stroke-width="5" stroke-linecap="round"/>`;
   s += '<ellipse cx="60" cy="112" rx="10" ry="5" fill="#FF8FA3" opacity="0.55"/><ellipse cx="140" cy="112" rx="10" ry="5" fill="#FF8FA3" opacity="0.55"/>';
