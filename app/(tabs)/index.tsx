@@ -6,7 +6,7 @@ import Svg, { Circle, Path } from 'react-native-svg';
 import { Screen } from '../../src/components/Screen';
 import { Chip } from '../../src/components/Social';
 import { repo, type Explore as ExploreData } from '../../src/data';
-import { CULTURE_CATEGORIES, KOBIS_CREDIT, REGIONS, formatPeriod, getCultureEvents, type CultureEvent } from '../../src/data/culture';
+import { CULTURE_CATEGORIES, KOBIS_CREDIT, REGIONS, TMDB_CREDIT, httpsUrl, formatPeriod, getCultureEvents, type CultureEvent } from '../../src/data/culture';
 import { colors, fonts } from '../../src/theme';
 
 const REGION_KEY = 'explore.region';
@@ -74,7 +74,7 @@ export default function Explore() {
           {shown.slice(0, 60).map((e) => (
             <Pressable key={e.id} style={styles.card} onPress={() => router.push({ pathname: '/event/[id]', params: { id: e.id } })}>
               {e.image_url ? (
-                <Image source={{ uri: e.image_url }} style={styles.thumb} resizeMode="cover" />
+                <Image source={{ uri: httpsUrl(e.image_url)! }} style={styles.thumb} resizeMode="cover" />
               ) : (
                 <View style={[styles.thumb, { backgroundColor: CAT_COLOR[e.category] ?? colors.border, alignItems: 'center', justifyContent: 'center' }]}>
                   <Text style={styles.thumbText}>{e.category}</Text>
@@ -89,6 +89,7 @@ export default function Explore() {
             </Pressable>
           ))}
           {shown.some((e) => e.category === '영화') && <Text style={styles.credit}>{KOBIS_CREDIT}</Text>}
+          {shown.some((e) => e.poster_source === 'tmdb') && <Text style={styles.credit}>{TMDB_CREDIT}</Text>}
         </View>
       )}
       <Text style={[styles.section, { marginTop: 10 }]}>냥냥 기록 둘러보기</Text>

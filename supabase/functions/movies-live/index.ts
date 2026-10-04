@@ -17,6 +17,25 @@ const iso = (s?: string | null) => {
   return m ? `${m[1]}-${m[2]}-${m[3]}` : null;
 };
 
+/** Optional TMDB poster lookup (only when TMDB_KEY is set). Accepts a v3 api key or a v4 read token. */
+async function tmdbPoster(title: string, year: string | undefined): Promise<string | null> {
+  const key = Deno.env.get('TMDB_KEY');
+  if (!key) return null;
+  try {
+    const bearer = key.startsWith('eyJ');
+    const q = new URLSearchParams({ query: title, language: 'ko-KR', region: 'KR', include_adult: 'false' });
+    if (year) q.set('primary_release_year', year);
+    if (!bearer) q.set('api_key', key);
+    const r = await fetch(`https://api.themoviedb.org/3/search/movie?${q}`, { headers: bearer ? { Authorization: `Bearer ${key}` } : {} });
+    if (!r.ok) return null;
+    const d = await r.json();
+    const hit = (d?.results ?? []).find((m: { poster_path?: string }) => m.poster_path);
+    return hit ? `https://image.tmdb.org/t/p/w342${hit.poster_path}` : null;
+  } catch {
+    return null;
+  }
+}
+
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: cors });
   const key = Deno.env.get('KOBIS_KEY');
@@ -30,10 +49,11 @@ Deno.serve(async (req) => {
     const d = await r.json();
     const list: Record<string, string>[] = d?.boxOfficeResult?.dailyBoxOfficeList ?? [];
     const today = iso(ymd(kst()));
-    const items = list.map((m) => ({
+    const posters = await Promise.all(list.map((m) => tmdbPoster(m.movieNm, m.openDt?.slice(0, 4))));
+    const items = list.map((m, i) => ({
       id: `kobis:${m.movieCd}`, source: 'kobis', category: '영화', title: m.movieNm,
       summary: `일별 박스오피스 ${m.rank}위 · 누적 관객 ${Number(m.audiAcc).toLocaleString('ko-KR')}명`,
-      image_url: null, venue: '전국 극장', region: '전국', address: null,
+      image_url: posters[i], poster_source: posters[i] ? 'tmdb' : null, venue: '전국 극장', region: '전국', address: null,
       start_date: iso(m.openDt) ?? today, end_date: null,
       link_url: `https://www.kobis.or.kr/kobis/business/mast/mvie/searchMovieList.do?sMovName=${encodeURIComponent(m.movieNm)}`,
       lat: null, lng: null,

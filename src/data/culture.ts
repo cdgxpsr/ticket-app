@@ -1,6 +1,9 @@
 import { ensureSession, supabase } from '../lib/supabase';
 
 export const KOBIS_CREDIT = '출처: 영화관입장권통합전산망(KOBIS)';
+export const TMDB_CREDIT = 'This product uses the TMDB API but is not endorsed or certified by TMDB.';
+/** iOS ATS blocks http:// images; existing rows may still hold http URLs. */
+export const httpsUrl = (u: string | null | undefined) => (u ? u.replace(/^http:\/\//i, 'https://') : null);
 
 export const REGIONS = ['전국', '서울', '부산', '대구', '인천', '광주', '대전', '울산', '세종', '경기', '강원', '충북', '충남', '전북', '전남', '경북', '경남', '제주'] as const;
 export const CULTURE_CATEGORIES = ['전체', '영화', '공연', '전시', '축제', '액티비티', '숙박'] as const;
@@ -9,9 +12,11 @@ export type CultureEvent = {
   id: string; source: string; category: string; title: string; summary: string | null; image_url: string | null;
   venue: string | null; region: string; address: string | null; start_date: string | null; end_date: string | null;
   link_url: string | null; lat: number | null; lng: number | null;
+  booking_links?: { name: string; url: string }[] | null;
+  poster_source?: 'tmdb' | null;
 };
 
-const COLS = 'id, source, category, title, summary, image_url, venue, region, address, start_date, end_date, link_url, lat, lng';
+const COLS = 'id, source, category, title, summary, image_url, venue, region, address, start_date, end_date, link_url, lat, lng, booking_links';
 const ev = (e: Partial<CultureEvent> & Pick<CultureEvent, 'id' | 'category' | 'title' | 'region'>): CultureEvent => ({
   source: 'sample', summary: null, image_url: null, venue: null, address: null, start_date: null, end_date: null, link_url: null, lat: null, lng: null, ...e,
 });

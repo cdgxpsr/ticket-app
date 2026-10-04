@@ -4,7 +4,10 @@ type Row = {
   id: string; source: string; category: string; title: string; summary: string | null; image_url: string | null;
   venue: string | null; region: string; address: string | null; start_date: string | null; end_date: string | null;
   link_url: string | null; lat: number | null; lng: number | null; updated_at: string;
+  booking_links?: { name: string; url: string }[];
 };
+/** iOS ATS blocks http:// images; both TourAPI and KOPIS serve the same paths over https. */
+const https = (u: string | null) => (u ? u.replace(/^http:\/\//i, 'https://') : null);
 
 const env = (k: string) => Deno.env.get(k) ?? '';
 const json = (body: unknown, status = 200) => new Response(JSON.stringify(body), { status, headers: { 'Content-Type': 'application/json' } });
@@ -72,7 +75,7 @@ async function kopis(key: string): Promise<Row[]> {
         const area = tag(db, 'area');
         out.push({
           id: `kopis:${id}`, source: 'kopis', category: '공연', title,
-          summary: tag(db, 'genrenm'), image_url: tag(db, 'poster'), venue: tag(db, 'fcltynm'),
+          summary: tag(db, 'genrenm'), image_url: https(tag(db, 'poster')), venue: tag(db, 'fcltynm'),
           region: KOPIS_SIDO[code] ?? regionFromText(area) ?? '서울', address: area,
           start_date: iso(tag(db, 'prfpdfrom')), end_date: iso(tag(db, 'prfpdto')),
           link_url: `https://www.kopis.or.kr/por/db/pblprfr/pblprfrView.do?menuId=MNU_00020&mt20Id=${id}`,
@@ -83,7 +86,47 @@ async function kopis(key: string): Promise<Row[]> {
       console.error('kopis', code, e);
     }
   }
+  await addBookingLinks(key, out);
   return out;
+}
+
+const DETAIL_CAP = 150; // KOPIS detail calls per run (quota)
+const decode = (s: string) => s.replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"');
+async function existingLinks(): Promise<Map<string, { name: string; url: string }[]>> {
+  const m = new Map<string, { name: string; url: string }[]>();
+  try {
+    const r = await fetch(`${env('SUPABASE_URL')}/rest/v1/culture_events?select=id,booking_links&source=eq.kopis&booking_links=neq.%5B%5D`, {
+      headers: { apikey: env('SUPABASE_SERVICE_ROLE_KEY'), Authorization: `Bearer ${env('SUPABASE_SERVICE_ROLE_KEY')}` },
+    });
+    if (r.ok) for (const row of await r.json()) if (Array.isArray(row.booking_links) && row.booking_links.length) m.set(row.id, row.booking_links);
+  } catch (e) {
+    console.error('existingLinks', e);
+  }
+  return m;
+}
+/** Fills booking_links from KOPIS detail <relates>; reuses stored links, caps new detail calls per run. */
+async function addBookingLinks(key: string, rows: Row[]) {
+  const known = await existingLinks();
+  let calls = 0;
+  for (const row of rows) {
+    const have = known.get(row.id);
+    if (have) { row.booking_links = have; continue; }
+    row.booking_links = [];
+    if (calls >= DETAIL_CAP) continue;
+    calls++;
+    try {
+      const r = await fetch(`https://www.kopis.or.kr/openApi/restful/pblprfr/${row.id.slice(6)}?service=${key}`);
+      if (!r.ok) continue;
+      const xml = await r.text();
+      for (const rel of xml.match(/<relate>[\s\S]*?<\/relate>/g) ?? []) {
+        const name = tag(rel, 'relatenm');
+        const url = tag(rel, 'relateurl');
+        if (name && url && /^https?:\/\//.test(decode(url))) row.booking_links.push({ name: decode(name), url: decode(url).replace(/^http:\/\//i, 'https://') });
+      }
+    } catch (e) {
+      console.error('kopis detail', row.id, e);
+    }
+  }
 }
 
 /* ---------- 한국관광공사 KorService2 ---------- */
@@ -109,7 +152,7 @@ function tourRow(i: Record<string, string>, category: string, start: string | nu
   const addr = [str(i.addr1), str(i.addr2)].filter(Boolean).join(' ') || null;
   return {
     id: `tour:${i.contentid}`, source: 'tour', category, title: i.title,
-    summary: str(i.tel), image_url: str(i.firstimage) ?? str(i.firstimage2), venue: null,
+    summary: str(i.tel), image_url: https(str(i.firstimage) ?? str(i.firstimage2)), venue: null,
     region: TOUR_AREA[String(i.areacode ?? '')] ?? regionFromText(addr) ?? '서울', address: addr,
     start_date: start, end_date: end,
     link_url: `https://korean.visitkorea.or.kr/detail/ms_detail.do?cotid=${i.contentid}`,
