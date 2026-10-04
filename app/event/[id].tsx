@@ -1,37 +1,10 @@
 import { router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { ActivityIndicator, Image, Linking, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { KOBIS_CREDIT, KMDB_CREDIT, httpsUrl, formatPeriod, getNearbyStays, getCultureEvent, type CultureEvent } from '../../src/data/culture';
+import { openVendor, vendorsFor } from '../../src/lib/booking';
 import { colors, fonts } from '../../src/theme';
-
-const APP = 'com.nyangsucheop.app';
-type Btn = { name: string; url: string; fallback?: string };
-/** Opens the Naver Map app (place page has 예약); universal-link fallback opens the app or web. */
-function naverMap(e: CultureEvent, query: string): Btn {
-  const q = encodeURIComponent(query.trim());
-  const url = e.lat != null && e.lng != null
-    ? `nmap://place?lat=${e.lat}&lng=${e.lng}&name=${encodeURIComponent(e.title)}&appname=${APP}`
-    : `nmap://search?query=${q}&appname=${APP}`;
-  return { name: '네이버 지도에서 예약', url, fallback: `https://map.naver.com/p/search/${q}` };
-}
-// Chain mobile booking homes; title-search URL formats are not stable/documented, so we open booking home.
-const CINEMAS = [
-  { name: 'CGV', url: 'https://m.cgv.co.kr/' },
-  { name: '메가박스', url: 'https://m.megabox.co.kr/booking' },
-  { name: '롯데시네마', url: 'https://www.lottecinema.co.kr/NLCMW/' },
-];
-
-function bookingButtons(e: CultureEvent): Btn[] {
-  if (e.category === '영화') return CINEMAS;
-  if (e.category === '숙박') return [naverMap(e, `${e.title} ${e.region === '전국' ? '' : e.region}`)];
-  const links = (e.booking_links ?? []).filter((l) => l?.name && /^https?:\/\//.test(l.url));
-  if (links.length) return links.map((l) => ({ name: l.name, url: httpsUrl(l.url)! }));
-  return [naverMap(e, `${e.title} ${e.venue || e.region}`)];
-}
-// 예매는 외부 앱/사파리로 연다. https 링크는 CGV·인터파크 등 앱이 설치돼 있으면 그 앱으로 바로 열린다(유니버설 링크).
-const open = (url: string, fallback?: string) =>
-  Linking.openURL(url).catch(() => (fallback ? Linking.openURL(fallback).catch(() => {}) : undefined));
 
 export default function EventDetail() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -71,12 +44,14 @@ export default function EventDetail() {
             ))}
           </View>
           <View style={{ gap: 10 }}>
-            <Text style={styles.section}>{ev.category === '영화' ? '영화관에서 예매하기' : '예매·예약'}</Text>
-            {bookingButtons(ev).map((b, i) => (
-              <Pressable key={b.name + i} style={[styles.btn, i === 0 && styles.primary]} onPress={() => open(b.url, b.fallback)}>
-                <Text style={[styles.btnText, i === 0 && { color: colors.bg }]}>{b.name}</Text>
-              </Pressable>
-            ))}
+            <Text style={styles.section}>예매/예약하기</Text>
+            <View style={styles.tiles}>
+              {vendorsFor(ev).map((v, i) => (
+                <Pressable key={v.name + i} style={({ pressed }) => [styles.tile, i === 0 && styles.tileFirst, pressed && { opacity: 0.8 }]} onPress={() => openVendor(v)}>
+                  <Text style={[styles.tileText, i === 0 && { color: colors.bg }]} numberOfLines={1}>{v.name}</Text>
+                </Pressable>
+              ))}
+            </View>
             {ev.category === '영화' && <Text style={styles.credit}>{KOBIS_CREDIT}</Text>}
             {ev.poster_source === 'kmdb' && <Text style={styles.credit}>{KMDB_CREDIT}</Text>}
           </View>
@@ -116,12 +91,13 @@ const styles = StyleSheet.create({
   row: { flexDirection: 'row', gap: 12 },
   key: { width: 40, color: colors.muted, fontFamily: fonts.semibold, fontSize: 14 },
   val: { flex: 1, color: colors.text, fontFamily: fonts.regular, fontSize: 14, lineHeight: 20 },
-  btn: { borderRadius: 12, paddingVertical: 14, alignItems: 'center', backgroundColor: colors.surface, borderColor: colors.border, borderWidth: 1 },
-  primary: { backgroundColor: colors.accent, borderColor: colors.accent },
+  tiles: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+  tile: { paddingVertical: 11, paddingHorizontal: 14, borderRadius: 12, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border },
+  tileFirst: { backgroundColor: colors.accent, borderColor: colors.accent },
+  tileText: { color: colors.text, fontFamily: fonts.semibold, fontSize: 14 },
   section: { color: colors.text, fontFamily: fonts.bold, fontSize: 18, marginTop: 8 },
   stayName: { color: colors.text, fontFamily: fonts.semibold, fontSize: 15 },
   credit: { color: '#6F6680', fontFamily: fonts.regular, fontSize: 11 },
   recordBtn: { borderRadius: 999, paddingVertical: 9, paddingHorizontal: 18, borderWidth: 1, borderColor: colors.border },
   recordText: { color: colors.muted, fontFamily: fonts.semibold, fontSize: 13 },
-  btnText: { color: colors.text, fontFamily: fonts.bold, fontSize: 15 },
 });

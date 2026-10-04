@@ -18,7 +18,9 @@
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false,
         "LSApplicationQueriesSchemes": [
-          "nmap"
+          "nmap",
+          "kakaomap",
+          "naversearchapp"
         ]
       }
     },
