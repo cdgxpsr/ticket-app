@@ -13,8 +13,8 @@ const icons: Record<string, (p: IconProps) => React.ReactElement> = {
 };
 
 const tabs = [
-  { name: 'index', title: '피드', icon: 'feed' },
-  { name: 'explore', title: '둘러보기', icon: 'explore' },
+  { name: 'index', title: '둘러보기', icon: 'explore' },
+  { name: 'feed', title: '피드', icon: 'feed' },
   { name: 'community', title: '커뮤니티', icon: 'community' },
   { name: 'tickets', title: '내 티켓', icon: 'tickets' },
   { name: 'more', title: '더보기', icon: 'more' },
