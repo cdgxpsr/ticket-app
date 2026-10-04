@@ -99,8 +99,8 @@ export const localRepo: Repo = {
   async getPost(id) {
     return load().posts.find((p) => p.id === id);
   },
-  async createPost({ board, title, body, tag }) {
-    const post: BoardPost = { id: uid(), board, title, body, tag, author: meUser(), createdAt: Date.now(), likes: 0, liked: false, comments: [] };
+  async createPost({ board, title, body, tag, images }) {
+    const post: BoardPost = { id: uid(), board, title, body, tag, images, author: meUser(), createdAt: Date.now(), likes: 0, liked: false, comments: [] };
     load().posts.unshift(post);
     save();
     return post;

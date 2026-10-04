@@ -1,7 +1,7 @@
 import { requireAccount } from '../../src/lib/auth';
 import { useLocalSearchParams } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Image, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { CatAvatar } from '../../src/components/CatAvatar';
 import { Header } from '../../src/components/Header';
@@ -40,7 +40,8 @@ export default function PostDetail() {
               </View>
             </View>
             <Text style={styles.title}>{post.title}</Text>
-            <Text style={styles.text}>{post.body}</Text>
+            {!!post.body && <Text style={styles.text}>{post.body}</Text>}
+            {post.images?.map((u) => <Image key={u} source={{ uri: u }} style={styles.photo} resizeMode="cover" />)}
             <Pressable onPress={async () => { await repo.like(post.id); reload(); }} style={[styles.like, post.liked && { borderColor: colors.accent }]}>
               <Text style={[styles.likeText, post.liked && { color: colors.accent }]}>좋아요 {post.likes}</Text>
             </Pressable>
@@ -60,6 +61,7 @@ export default function PostDetail() {
 }
 
 const styles = StyleSheet.create({
+  photo: { width: '100%', aspectRatio: 1, borderRadius: 16, backgroundColor: colors.surface },
   safe: { flex: 1, backgroundColor: colors.bg },
   body: { padding: 20, gap: 14 },
   name: { color: colors.text, fontFamily: fonts.semibold, fontSize: 15 },

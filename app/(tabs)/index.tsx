@@ -4,7 +4,8 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { ActivityIndicator, Image, Modal, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import Svg, { Circle, Path, Rect } from 'react-native-svg';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { CULTURE_CATEGORIES, KOBIS_CREDIT, REGIONS, KMDB_CREDIT, httpsUrl, formatPeriod, getCultureEvents, districtOf, DATE_RANGES, inRange, type DateRange, curate, INTEREST_KEY, RECOMMEND, type CultureEvent } from '../../src/data/culture';
+import { CULTURE_CATEGORIES, KOBIS_CREDIT, REGIONS, KMDB_CREDIT, httpsUrl, formatPeriod, getCultureEvents, districtOf, inRange, type DateSpan, curate, INTEREST_KEY, RECOMMEND, type CultureEvent } from '../../src/data/culture';
+import { Calendar, spanLabel } from '../../src/components/Calendar';
 import { colors, fonts } from '../../src/theme';
 
 const REGION_KEY = 'explore.region';
@@ -30,7 +31,7 @@ export default function Explore() {
   const [sample, setSample] = useState(false);
   const [district, setDistrict] = useState('전체');
   const [panel, setPanel] = useState<'region' | 'cat' | 'date' | null>(null);
-  const [when, setWhen] = useState<DateRange>('전체');
+  const [when, setWhen] = useState<DateSpan>(null);
   const [page, setPage] = useState(1);
   const listRef = useRef<ScrollView>(null);
   const [interests, setInterests] = useState<string[]>([]);
@@ -108,7 +109,7 @@ export default function Explore() {
           {(['region', 'cat', 'date'] as const).map((k, i) => {
             const on = panel === k;
             const label = k === 'region' ? (district === '전체' ? region : `${region} ${district}`)
-              : k === 'date' ? (when === '전체' ? '날짜' : when)
+              : k === 'date' ? spanLabel(when)
               : ccat === '전체' ? '종류 전체' : ccat === RECOMMEND ? '내 관심사' : ccat;
             return (
               <Pressable key={k} onPress={() => setPanel(on ? null : k)} style={[styles.filterBtn, i < 2 && styles.filterFirst, k === 'date' && { flex: 0.8 }, on && styles.filterOn]} accessibilityRole="button" accessibilityState={{ expanded: on }}>
@@ -153,14 +154,7 @@ export default function Explore() {
         )}
         {panel === 'date' && (
           <View style={[styles.panel, styles.catPanel]}>
-            {DATE_RANGES.map((d) => {
-              const on = d === when;
-              return (
-                <Pressable key={d} onPress={() => { setWhen(d); setPanel(null); }} style={[styles.catCell, { paddingVertical: 12 }, on && styles.catCellOn]} accessibilityState={{ selected: on }}>
-                  <Text style={[styles.catText, on && styles.sidoTextOn]}>{d}</Text>
-                </Pressable>
-              );
-            })}
+            <Calendar value={when} onChange={setWhen} onDone={() => setPanel(null)} />
           </View>
         )}
         {panel === 'cat' && (
@@ -184,7 +178,7 @@ export default function Explore() {
       </View>
       <ScrollView ref={listRef} style={{ flex: 1 }} contentContainerStyle={styles.main}>
         <View style={styles.listHead}>
-          <Text style={styles.listTitle}>{region}{district !== '전체' ? ` ${district}` : ''} · {ccat === RECOMMEND ? '추천' : catLabel}{when !== '전체' ? ` · ${when}` : ''}</Text>
+          <Text style={styles.listTitle}>{region}{district !== '전체' ? ` ${district}` : ''} · {ccat === RECOMMEND ? '추천' : catLabel}{when ? ` · ${spanLabel(when)}` : ''}</Text>
           {!!events && <Text style={styles.count}>{total}</Text>}
         </View>
         {sample && <Text style={styles.note}>예시 정보를 보여주고 있어요 · 매일 새벽 최신 정보로 갱신돼요</Text>}

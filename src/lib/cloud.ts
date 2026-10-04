@@ -21,6 +21,18 @@ export async function uploadImage(localUri: string, name: string): Promise<strin
   return path;
 }
 
+/** Uploads a post photo to the public `post-images` bucket; returns its public URL. */
+export async function uploadPostImage(localUri: string): Promise<string> {
+  const me = await uid();
+  const f = new File(localUri);
+  const ext = (f.extension || '.jpg').toLowerCase();
+  const type = ext === '.png' ? 'image/png' : ext === '.webp' ? 'image/webp' : ext === '.heic' ? 'image/heic' : 'image/jpeg';
+  const path = `${me}/${Date.now()}-${Math.random().toString(36).slice(2, 8)}${ext}`;
+  const { error } = await supabase.storage.from('post-images').upload(path, await f.bytes(), { contentType: type });
+  if (error) throw error;
+  return supabase.storage.from('post-images').getPublicUrl(path).data.publicUrl;
+}
+
 export async function signedUrl(path: string): Promise<string | undefined> {
   const { data } = await supabase.storage.from('tickets').createSignedUrl(path, 60 * 60 * 24 * 7);
   return data?.signedUrl;
