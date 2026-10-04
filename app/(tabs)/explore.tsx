@@ -6,7 +6,7 @@ import Svg, { Circle, Path } from 'react-native-svg';
 import { Screen } from '../../src/components/Screen';
 import { Chip } from '../../src/components/Social';
 import { repo, type Explore as ExploreData } from '../../src/data';
-import { CULTURE_CATEGORIES, REGIONS, formatPeriod, getCultureEvents, type CultureEvent } from '../../src/data/culture';
+import { CULTURE_CATEGORIES, KOBIS_CREDIT, REGIONS, formatPeriod, getCultureEvents, type CultureEvent } from '../../src/data/culture';
 import { colors, fonts } from '../../src/theme';
 
 const REGION_KEY = 'explore.region';
@@ -88,6 +88,7 @@ export default function Explore() {
               </View>
             </Pressable>
           ))}
+          {shown.some((e) => e.category === '영화') && <Text style={styles.credit}>{KOBIS_CREDIT}</Text>}
         </View>
       )}
       <Text style={[styles.section, { marginTop: 10 }]}>냥냥 기록 둘러보기</Text>
@@ -147,6 +148,7 @@ const styles = StyleSheet.create({
   posterTitle: { color: '#fff', fontFamily: fonts.bold, fontSize: 18, lineHeight: 23, letterSpacing: -0.5 },
   rating: { color: colors.accent, fontFamily: fonts.semibold, fontSize: 13 },
   near: { flexDirection: 'row', alignItems: 'center', paddingVertical: 13, borderBottomWidth: 1, borderBottomColor: '#262030' },
+  credit: { color: '#6F6680', fontFamily: fonts.regular, fontSize: 11 },
   card: { flexDirection: 'row', gap: 12, padding: 10, borderRadius: 16, backgroundColor: colors.surface },
   thumb: { width: 76, height: 100, borderRadius: 10, overflow: 'hidden' },
   thumbText: { color: '#fff', fontFamily: fonts.bold, fontSize: 14 },

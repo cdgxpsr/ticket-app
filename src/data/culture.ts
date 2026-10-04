@@ -1,4 +1,6 @@
-import { supabase } from '../lib/supabase';
+import { ensureSession, supabase } from '../lib/supabase';
+
+export const KOBIS_CREDIT = '출처: 영화관입장권통합전산망(KOBIS)';
 
 export const REGIONS = ['전국', '서울', '부산', '대구', '인천', '광주', '대전', '울산', '세종', '경기', '강원', '충북', '충남', '전북', '전남', '경북', '경남', '제주'] as const;
 export const CULTURE_CATEGORIES = ['전체', '영화', '공연', '전시', '축제', '액티비티'] as const;
@@ -33,23 +35,46 @@ export const SAMPLE_EVENTS: CultureEvent[] = [
 const filterLocal = (region: string, category: string) =>
   SAMPLE_EVENTS.filter((e) => (region === '전국' || e.region === region || e.region === '전국') && (category === '전체' || e.category === category));
 
-/** Fetches events for a region (전국 = all). Falls back to samples when the table is empty or the request fails. */
-export async function getCultureEvents(region: string, category: string): Promise<{ events: CultureEvent[]; sample: boolean }> {
+const liveMovies = new Map<string, CultureEvent>();
+
+/** Live KOBIS box office via the movies-live function (KOBIS data must not be stored). */
+async function getLiveMovies(): Promise<CultureEvent[]> {
   try {
-    let q = supabase.from('culture_events').select(COLS).order('start_date', { ascending: false, nullsFirst: false }).limit(200);
-    if (region !== '전국') q = q.in('region', [region, '전국']);
-    if (category !== '전체') q = q.eq('category', category);
-    const { data, error } = await q;
-    if (error) throw error;
-    if (data && data.length) return { events: data as CultureEvent[], sample: false };
+    await ensureSession();
+    const { data, error } = await supabase.functions.invoke<{ items: CultureEvent[] }>('movies-live', { method: 'POST', body: {} });
+    if (error || !data?.items?.length) throw error ?? new Error('empty');
+    data.items.forEach((m) => liveMovies.set(m.id, m));
+    return data.items;
   } catch {
-    // offline or table missing
+    return SAMPLE_EVENTS.filter((e) => e.category === '영화');
   }
-  return { events: filterLocal(region, category), sample: true };
+}
+
+/** Fetches events for a region (전국 = all). Movies come live from KOBIS; other categories fall back to samples. */
+export async function getCultureEvents(region: string, category: string): Promise<{ events: CultureEvent[]; sample: boolean }> {
+  const wantMovies = category === '전체' || category === '영화';
+  const moviesP = wantMovies ? getLiveMovies() : Promise.resolve([]);
+  let others: CultureEvent[] | undefined;
+  if (category !== '영화') {
+    try {
+      let q = supabase.from('culture_events').select(COLS).neq('category', '영화').order('start_date', { ascending: false, nullsFirst: false }).limit(200);
+      if (region !== '전국') q = q.eq('region', region);
+      if (category !== '전체') q = q.eq('category', category);
+      const { data, error } = await q;
+      if (error) throw error;
+      if (data && data.length) others = data as CultureEvent[];
+    } catch {
+      // offline or table missing
+    }
+  }
+  const sample = category !== '영화' && !others;
+  if (!others) others = filterLocal(region, category).filter((e) => e.category !== '영화');
+  const movies = await moviesP;
+  return { events: [...movies, ...others], sample };
 }
 
 export async function getCultureEvent(id: string): Promise<CultureEvent | undefined> {
-  const s = SAMPLE_EVENTS.find((e) => e.id === id);
+  const s = SAMPLE_EVENTS.find((e) => e.id === id) ?? liveMovies.get(id);
   if (s) return s;
   try {
     const { data } = await supabase.from('culture_events').select(COLS).eq('id', id).maybeSingle();

@@ -1,4 +1,4 @@
-// Supabase Edge Function (Deno): pulls KOBIS / KOPIS / 한국관광공사 data into public.culture_events.
+// Supabase Edge Function (Deno): pulls KOPIS / 한국관광공사 data into public.culture_events.
 // Auth: header `x-sync-secret: $SYNC_SECRET` or `Authorization: Bearer <service role key>`.
 type Row = {
   id: string; source: string; category: string; title: string; summary: string | null; image_url: string | null;
@@ -16,6 +16,7 @@ const iso = (s?: string | null) => {
   const m = (s ?? '').replace(/[.\-]/g, '').match(/^(\d{4})(\d{2})(\d{2})/);
   return m ? `${m[1]}-${m[2]}-${m[3]}` : null;
 };
+// Movies (KOBIS) are NOT stored here: KOBIS terms require real-time use. See movies-live.
 const str = (v: unknown) => (typeof v === 'string' && v.trim() ? v.trim() : null);
 const num = (v: unknown) => { const n = Number(v); return Number.isFinite(n) && n !== 0 ? n : null; };
 
@@ -46,24 +47,6 @@ async function getJson(url: string) {
   if (!r.ok) throw new Error(`${r.status} ${url.split('?')[0]}`);
   const text = await r.text();
   try { return JSON.parse(text); } catch { throw new Error(`non-json response: ${text.slice(0, 200)}`); }
-}
-
-/* ---------- KOBIS ---------- */
-async function kobis(key: string): Promise<Row[]> {
-  const target = ymd(kst(-1));
-  const d = await getJson(`https://www.kobis.or.kr/kobisopenapi/webservice/rest/boxoffice/searchDailyBoxOfficeList.json?key=${key}&targetDt=${target}`);
-  const list: Record<string, string>[] = d?.boxOfficeResult?.dailyBoxOfficeList ?? [];
-  const now = new Date().toISOString();
-  const today = iso(ymd(kst()));
-  const until = iso(ymd(kst(7)));
-  return list.map((m) => ({
-    id: `kobis:${m.movieCd}`, source: 'kobis', category: '영화', title: m.movieNm,
-    summary: `일별 박스오피스 ${m.rank}위 · 누적 관객 ${Number(m.audiAcc).toLocaleString('ko-KR')}명`,
-    image_url: null, venue: '전국 극장', region: '전국', address: null,
-    start_date: iso(m.openDt) ?? today, end_date: until,
-    link_url: `https://www.kobis.or.kr/kobis/business/mast/mvie/searchMovieList.do?sMovName=${encodeURIComponent(m.movieNm)}`,
-    lat: null, lng: null, updated_at: now,
-  }));
 }
 
 /* ---------- KOPIS (XML) ---------- */
@@ -186,7 +169,6 @@ Deno.serve(async (req) => {
     if (!key) { counts[name] = 'skipped (no key)'; return; }
     try { counts[name] = await upsert(await fn(key)); } catch (e) { counts[name] = `error: ${(e as Error).message}`; }
   };
-  await run('kobis', 'KOBIS_KEY', kobis);
   await run('kopis', 'KOPIS_KEY', kopis);
   if (env('TOUR_API_KEY')) {
     try {

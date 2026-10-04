@@ -2,7 +2,7 @@ import { router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { ActivityIndicator, Image, Linking, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { formatPeriod, getCultureEvent, type CultureEvent } from '../../src/data/culture';
+import { KOBIS_CREDIT, formatPeriod, getCultureEvent, type CultureEvent } from '../../src/data/culture';
 import { colors, fonts } from '../../src/theme';
 
 export default function EventDetail() {
@@ -37,6 +37,7 @@ export default function EventDetail() {
               </View>
             ))}
           </View>
+          {ev.category === '영화' && <Text style={[styles.desc, { fontSize: 12 }]}>{KOBIS_CREDIT}</Text>}
           {!!ev.link_url && (
             <Pressable style={[styles.btn, styles.primary]} onPress={() => Linking.openURL(ev.link_url!).catch(() => {})}>
               <Text style={[styles.btnText, { color: colors.bg }]}>예매/자세히 보기</Text>
