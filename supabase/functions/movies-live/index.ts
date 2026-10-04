@@ -24,7 +24,7 @@ const dayNum = (s?: string) => {
   const m = (s ?? '').replace(/\D/g, '').match(/^(\d{4})(\d{2})(\d{2})/);
   return m ? Date.UTC(+m[1], +m[2] - 1, +m[3]) / 86400_000 : NaN;
 };
-async function kmdbPoster(title: string, openDt: string | undefined): Promise<string | null> {
+async function kmdbInfo(title: string, openDt: string | undefined): Promise<{ poster: string | null; plot: string | null } | null> {
   const key = Deno.env.get('KMDB_KEY');
   if (!key) return null;
   const open = dayNum(openDt);
@@ -43,21 +43,48 @@ async function kmdbPoster(title: string, openDt: string | undefined): Promise<st
       // try next scheme
     }
   }
-  const items: { title?: string; posters?: string; repRlsDate?: string }[] = d?.Data?.[0]?.Result ?? [];
+  const items: { title?: string; posters?: string; repRlsDate?: string; plots?: { plot?: { plotLang?: string; plotText?: string }[] } }[] = d?.Data?.[0]?.Result ?? [];
   const want = norm(title);
-  let best: { url: string; score: number } | null = null;
+  let best: { url: string | null; plot: string | null; score: number } | null = null;
   for (const it of items) {
-    const url = (it.posters ?? '').split('|').map((u) => u.trim()).find(Boolean);
-    if (!url) continue;
+    const url = (it.posters ?? '').split('|').map((u) => u.trim()).find(Boolean) ?? null;
+    const plots = it.plots?.plot ?? [];
+    const plot = (plots.find((p) => p.plotLang === '한국어') ?? plots[0])?.plotText?.trim() || null;
+    if (!url && !plot) continue;
     const t = norm(it.title ?? '');
     const titleScore = t === want ? 0 : t.includes(want) || want.includes(t) ? 1 : 3;
     const gap = Math.abs(dayNum(it.repRlsDate) - open);
     const score = titleScore * 1000 + (Number.isFinite(gap) ? Math.min(gap, 999) : 999);
-    if (!best || score < best.score) best = { url, score };
+    if (!best || score < best.score) best = { url, plot, score };
   }
   if (!best || best.score >= 3000) return null;
   // file.koreafilm.or.kr serves the same path over https (iOS ATS blocks http).
-  return best.url.replace(/^http:\/\//i, 'https://');
+  return { poster: best.url?.replace(/^http:\/\//i, 'https://') ?? null, plot: best.plot };
+}
+
+/** KOBIS movie detail: genre, running time, rating, director, cast. Cached per movie for the process lifetime. */
+const infoCache = new Map<string, string | null>();
+async function kobisInfo(key: string, movieCd: string): Promise<string | null> {
+  if (infoCache.has(movieCd)) return infoCache.get(movieCd)!;
+  let out: string | null = null;
+  try {
+    const r = await fetch(`https://www.kobis.or.kr/kobisopenapi/webservice/rest/movie/searchMovieInfo.json?key=${key}&movieCd=${movieCd}`);
+    const m = r.ok ? (await r.json())?.movieInfoResult?.movieInfo : null;
+    if (m) {
+      const parts = [
+        (m.genres ?? []).map((g: { genreNm: string }) => g.genreNm).join('/'),
+        m.showTm ? `${m.showTm}분` : '',
+        m.audits?.[0]?.watchGradeNm ?? '',
+        m.directors?.[0]?.peopleNm ? `감독 ${m.directors[0].peopleNm}` : '',
+        (m.actors ?? []).slice(0, 3).map((a: { peopleNm: string }) => a.peopleNm).join(', ') ? `출연 ${(m.actors ?? []).slice(0, 3).map((a: { peopleNm: string }) => a.peopleNm).join(', ')}` : '',
+      ].filter(Boolean);
+      out = parts.join(' · ') || null;
+    }
+  } catch {
+    // leave null
+  }
+  infoCache.set(movieCd, out);
+  return out;
 }
 
 Deno.serve(async (req) => {
@@ -73,11 +100,15 @@ Deno.serve(async (req) => {
     const d = await r.json();
     const list: Record<string, string>[] = d?.boxOfficeResult?.dailyBoxOfficeList ?? [];
     const today = iso(ymd(kst()));
-    const posters = await Promise.all(list.map((m) => kmdbPoster(m.movieNm, m.openDt)));
+    const [kmdb, infos] = await Promise.all([
+      Promise.all(list.map((m) => kmdbInfo(m.movieNm, m.openDt))),
+      Promise.all(list.map((m) => kobisInfo(key, m.movieCd))),
+    ]);
     const items = list.map((m, i) => ({
       id: `kobis:${m.movieCd}`, source: 'kobis', category: '영화', title: m.movieNm,
-      summary: `일별 박스오피스 ${m.rank}위 · 누적 관객 ${Number(m.audiAcc).toLocaleString('ko-KR')}명`,
-      image_url: posters[i], poster_source: posters[i] ? 'kmdb' : null, venue: '전국 극장', region: '전국', address: null,
+      // 소개: KMDb 줄거리가 있으면 그것, 없으면 장르·러닝타임·등급·감독·출연.
+      summary: [kmdb[i]?.plot, infos[i]].filter(Boolean).join('\n\n') || null,
+      image_url: kmdb[i]?.poster ?? null, poster_source: kmdb[i]?.poster ? 'kmdb' : null, venue: '전국 극장', region: '전국', address: null,
       start_date: iso(m.openDt) ?? today, end_date: null,
       link_url: `https://www.kobis.or.kr/kobis/business/mast/mvie/searchMovieList.do?sMovName=${encodeURIComponent(m.movieNm)}`,
       lat: null, lng: null,

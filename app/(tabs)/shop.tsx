@@ -135,6 +135,14 @@ export default function Shop() {
               <Text style={styles.sheetTitle}>츄르 충전</Text>
               <View style={styles.wallet}><Churu /><Text style={styles.walletText}>{coins.toLocaleString()}</Text></View>
             </View>
+            <Pressable style={styles.pass}
+              onPress={() => Alert.alert('냥냥 패스는 정식 출시 때 열려요', '월 3,900원 · 매일 출석하면 츄르 50개 + 매달 바뀌는 패스 전용 아이템 1개.\n지금은 테스트 기간이라 결제를 받지 않아요.')}>
+              <View style={{ flex: 1, gap: 2 }}>
+                <Text style={styles.passTitle}>냥냥 패스 <Text style={styles.passBadge}>월 3,900원</Text></Text>
+                <Text style={styles.passDesc}>매일 츄르 50개 · 매달 패스 전용 아이템 · 한 달이면 츄르 1,500개</Text>
+              </View>
+              <Text style={styles.passGo}>›</Text>
+            </Pressable>
             {CHURU_PACKS.map((p) => (
               <Pressable key={p.amount} style={styles.pack}
                 onPress={() => Alert.alert('결제는 정식 출시 때 열려요', '지금은 테스트 기간이라 결제를 받지 않아요.\n티켓 기록, 후기, 매일 방문으로 츄르를 모아 보세요!')}>
@@ -166,6 +174,11 @@ const styles = StyleSheet.create({
   sheet: { backgroundColor: colors.surface, borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 20, paddingBottom: 40, gap: 10 },
   sheetHead: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 },
   sheetTitle: { color: colors.text, fontFamily: fonts.bold, fontSize: 22, lineHeight: 30 },
+  pass: { flexDirection: 'row', alignItems: 'center', gap: 10, padding: 16, borderRadius: 16, backgroundColor: '#3A2A66', borderWidth: 1, borderColor: '#9277FF' },
+  passTitle: { color: '#fff', fontFamily: fonts.bold, fontSize: 17, lineHeight: 24 },
+  passBadge: { color: '#FFC27A', fontFamily: fonts.bold, fontSize: 13 },
+  passDesc: { color: '#D8CCFF', fontFamily: fonts.regular, fontSize: 12, lineHeight: 17 },
+  passGo: { color: '#fff', fontSize: 24, lineHeight: 28 },
   pack: { flexDirection: 'row', alignItems: 'center', gap: 12, padding: 14, borderRadius: 16, backgroundColor: colors.bg, borderWidth: 1, borderColor: colors.border },
   packAmount: { color: colors.text, fontFamily: fonts.bold, fontSize: 16, lineHeight: 22 },
   bonus: { color: '#FFC27A', fontFamily: fonts.semibold, fontSize: 13 },

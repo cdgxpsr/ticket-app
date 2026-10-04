@@ -16,6 +16,7 @@ export default function EventDetail() {
   const [stays, setStays] = useState<CultureEvent[]>([]);
   const [images, setImages] = useState<string[]>([]);
   const [page, setPage] = useState(0);
+  const [failed, setFailed] = useState<string[]>([]);
   const [reviews, setReviews] = useState<EventReview[]>();
   const [rating, setRating] = useState(0);
   const [text, setText] = useState('');
@@ -54,6 +55,7 @@ export default function EventDetail() {
     setStays([]);
     setImages([]);
     setPage(0);
+    setFailed([]);
     if (ev) {
       getNearbyStays(ev).then(setStays);
       setImages(ev.image_url ? [httpsUrl(ev.image_url)!] : []);
@@ -62,7 +64,7 @@ export default function EventDetail() {
   }, [ev]);
 
   const rows: [string, string | null][] = ev
-    ? [['분류', `${ev.category} · ${ev.region}`], ['기간', formatPeriod(ev)], ['장소', ev.venue], ['주소', ev.address], ['소개', ev.summary]]
+    ? [['기간', formatPeriod(ev)], ['장소', ev.venue], ['주소', ev.address], ['소개', ev.summary]]
     : [];
 
   return (
@@ -90,11 +92,20 @@ export default function EventDetail() {
               <ScrollView horizontal pagingEnabled showsHorizontalScrollIndicator={false} style={[styles.hero, { width: heroW, height: heroH }]}
                 onMomentumScrollEnd={(e) => setPage(Math.round(e.nativeEvent.contentOffset.x / heroW))}>
                 {images.map((u) => (
-                  <Image key={u} source={{ uri: u }} style={{ width: heroW, height: heroH }} resizeMode="cover"
-                    onError={() => setImages((l) => (l.length > 1 ? l.filter((x) => x !== u) : l))} />
+                  <View key={u} style={{ width: heroW, height: heroH, alignItems: 'center', justifyContent: 'center' }}>
+                    {failed.includes(u) ? <Text style={styles.desc}>사진을 불러오지 못했어요</Text> : (
+                      <Image source={{ uri: u }} style={{ width: heroW, height: heroH }} resizeMode={u === images[0] ? 'cover' : 'contain'}
+                        onError={() => setFailed((l) => [...l, u])} />
+                    )}
+                  </View>
                 ))}
               </ScrollView>
-              {images.length > 1 && <View style={styles.pageTag}><Text style={styles.pageText}>{page + 1} / {images.length}</Text></View>}
+              {images.length > 1 && (
+                <>
+                  <View style={styles.pageTag}><Text style={styles.pageText}>{page + 1} / {images.length}</Text></View>
+                  <View style={styles.dots}>{images.map((u, i) => <View key={u} style={[styles.dot, i === page && styles.dotOn]} />)}</View>
+                </>
+              )}
             </View>
           )}
           <Text style={styles.name}>{ev.title}</Text>
@@ -176,7 +187,10 @@ const styles = StyleSheet.create({
   desc: { color: colors.muted, fontFamily: fonts.regular, fontSize: 14 },
   body: { padding: 20, gap: 18 },
   hero: { borderRadius: 16, backgroundColor: colors.surface, flexGrow: 0 },
-  pageTag: { position: 'absolute', right: 12, bottom: 12, backgroundColor: 'rgba(0,0,0,0.55)', borderRadius: 999, paddingHorizontal: 10, paddingVertical: 4 },
+  dots: { flexDirection: 'row', justifyContent: 'center', gap: 6, marginTop: 10 },
+  dot: { width: 6, height: 6, borderRadius: 3, backgroundColor: colors.border },
+  dotOn: { backgroundColor: colors.accent, width: 16 },
+  pageTag: { position: 'absolute', right: 12, top: 12, backgroundColor: 'rgba(0,0,0,0.55)', borderRadius: 999, paddingHorizontal: 10, paddingVertical: 4 },
   pageText: { color: '#fff', fontFamily: fonts.semibold, fontSize: 12 },
   avg: { color: colors.accent, fontFamily: fonts.bold, fontSize: 16 },
   star: { fontSize: 30, color: '#3A3448' },

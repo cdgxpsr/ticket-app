@@ -12,7 +12,10 @@ const env = (k: string) => Deno.env.get(k) ?? '';
 const https = (u: string) => u.replace(/^http:\/\//i, 'https://');
 
 async function tourImages(contentId: string): Promise<string[]> {
-  const url = `https://apis.data.go.kr/B551011/KorService2/detailImage2?serviceKey=${env('TOUR_API_KEY')}&MobileOS=ETC&MobileApp=nyangnyang&_type=json&numOfRows=20&pageNo=1&imageYN=Y&contentId=${contentId}`;
+  // Same handling as sync-culture: the decoding key has + / = and must be URL-encoded.
+  const raw = env('TOUR_API_KEY');
+  const key = raw.includes('%') ? raw : encodeURIComponent(raw);
+  const url = `https://apis.data.go.kr/B551011/KorService2/detailImage2?serviceKey=${key}&MobileOS=ETC&MobileApp=nyangnyang&_type=json&numOfRows=20&pageNo=1&imageYN=Y&contentId=${contentId}`;
   const r = await fetch(url);
   if (!r.ok) return [];
   const d = await r.json().catch(() => null);
@@ -35,7 +38,8 @@ Deno.serve(async (req) => {
   const db = createClient(env('SUPABASE_URL'), env('SUPABASE_SERVICE_ROLE_KEY'));
   const { data: row } = await db.from('culture_events').select('image_url, images').eq('id', id).maybeSingle();
   if (!row) return json({ images: [] });
-  if (row.images) return json({ images: row.images });
+  // Only a list with extras counts as cached; earlier failed lookups stored just the main image.
+  if (row.images && row.images.length > 1) return json({ images: row.images });
   const [src, key] = id.split(':');
   let images: string[] = [];
   try {
@@ -45,7 +49,9 @@ Deno.serve(async (req) => {
     return json({ images: [] });
   }
   const main = row.image_url ? https(row.image_url) : null;
+  const found = images.length;
   images = [...new Set([...(main ? [main] : []), ...images])].slice(0, 15);
-  await db.from('culture_events').update({ images }).eq('id', id);
+  console.log('event-images', id, 'found', found);
+  if (found > 0) await db.from('culture_events').update({ images }).eq('id', id);
   return json({ images });
 });

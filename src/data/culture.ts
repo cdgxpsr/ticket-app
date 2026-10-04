@@ -113,9 +113,15 @@ export async function getCultureEvent(id: string): Promise<CultureEvent | undefi
 
 export const formatPeriod = (e: CultureEvent) => {
   const f = (s: string | null) => (s ? s.replace(/-/g, '.') : '');
-  if ((e.category === '액티비티' || e.category === '숙박') && !e.start_date) return '상시';
-  if (e.start_date && e.end_date && e.start_date !== e.end_date) return `${f(e.start_date)} ~ ${f(e.end_date)}`;
-  return f(e.start_date ?? e.end_date) || '상시';
+  if (e.category === '영화') return e.start_date ? `${f(e.start_date)} 개봉 · 상영 중` : '상영 중';
+  // Places (museums, activities, stays) carry no dates, only a far-off end we set at sync time.
+  if (!e.start_date) {
+    const farOff = !e.end_date || Date.parse(e.end_date) - Date.now() > 180 * 86400000;
+    return farOff ? '상시 운영' : `~ ${f(e.end_date)}`;
+  }
+  if (!e.end_date) return `${f(e.start_date)} ~`;
+  if (e.start_date === e.end_date) return `${f(e.start_date)} (하루)`;
+  return `${f(e.start_date)} ~ ${f(e.end_date)}`;
 };
 
 /** 시군구 from an address ("서울 송파구 …", "서울특별시 송파구 …"); 세종 has none. */
@@ -134,8 +140,9 @@ export async function getEventImages(e: CultureEvent): Promise<string[]> {
     await ensureSession();
     const { data, error } = await supabase.functions.invoke<{ images: string[] }>('event-images', { method: 'POST', body: { id: e.id } });
     if (error || !data?.images?.length) return fallback;
-    // KOPIS 소개 이미지 are often 10,000px+ tall, which iOS won't render; crop/resize through a free image proxy.
-    return data.images.map((u, i) => (i === 0 && u === main ? u : `https://wsrv.nl/?url=${encodeURIComponent(u)}&w=900&h=1200&fit=cover&a=top&output=jpg`));
+    // Main image first, then the rest; https only (iOS ATS).
+    const rest = data.images.map((u) => httpsUrl(u)!).filter((u) => u !== main);
+    return [...fallback, ...rest];
   } catch {
     return fallback;
   }
