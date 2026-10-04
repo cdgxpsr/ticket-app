@@ -1,0 +1,67 @@
+import { supabase } from '../lib/supabase';
+
+export const REGIONS = ['전국', '서울', '부산', '대구', '인천', '광주', '대전', '울산', '세종', '경기', '강원', '충북', '충남', '전북', '전남', '경북', '경남', '제주'] as const;
+export const CULTURE_CATEGORIES = ['전체', '영화', '공연', '전시', '축제', '액티비티'] as const;
+
+export type CultureEvent = {
+  id: string; source: string; category: string; title: string; summary: string | null; image_url: string | null;
+  venue: string | null; region: string; address: string | null; start_date: string | null; end_date: string | null;
+  link_url: string | null; lat: number | null; lng: number | null;
+};
+
+const COLS = 'id, source, category, title, summary, image_url, venue, region, address, start_date, end_date, link_url, lat, lng';
+const ev = (e: Partial<CultureEvent> & Pick<CultureEvent, 'id' | 'category' | 'title' | 'region'>): CultureEvent => ({
+  source: 'sample', summary: null, image_url: null, venue: null, address: null, start_date: null, end_date: null, link_url: null, lat: null, lng: null, ...e,
+});
+
+export const SAMPLE_EVENTS: CultureEvent[] = [
+  ev({ id: 'sample:1', category: '영화', title: '박스오피스 상영작', region: '전국', venue: '전국 극장', summary: '오늘의 박스오피스 순위는 동기화 후 표시돼요', start_date: '2026-09-24', end_date: '2026-10-31', link_url: 'https://www.kobis.or.kr' }),
+  ev({ id: 'sample:2', category: '공연', title: '뮤지컬 〈오페라의 유령〉', region: '서울', venue: '샤롯데씨어터', address: '서울 송파구 올림픽로 240', start_date: '2026-09-01', end_date: '2026-11-30', link_url: 'https://www.kopis.or.kr' }),
+  ev({ id: 'sample:3', category: '공연', title: '연극 〈햄릿〉', region: '서울', venue: '국립극장 달오름극장', address: '서울 중구 장충단로 59', start_date: '2026-10-01', end_date: '2026-10-26', link_url: 'https://www.ntok.go.kr' }),
+  ev({ id: 'sample:4', category: '전시', title: '국립현대미술관 상설전', region: '서울', venue: '국립현대미술관 서울', address: '서울 종로구 삼청로 30', start_date: '2026-01-01', end_date: '2026-12-31', link_url: 'https://www.mmca.go.kr' }),
+  ev({ id: 'sample:5', category: '축제', title: '부산불꽃축제', region: '부산', venue: '광안리해수욕장', address: '부산 수영구 광안해변로 219', start_date: '2026-11-07', end_date: '2026-11-07', link_url: 'https://korean.visitkorea.or.kr' }),
+  ev({ id: 'sample:6', category: '전시', title: '부산현대미술관 기획전', region: '부산', venue: '부산현대미술관', address: '부산 사하구 낙동남로 1191', start_date: '2026-08-15', end_date: '2026-12-14', link_url: 'https://www.busan.go.kr/moca' }),
+  ev({ id: 'sample:7', category: '축제', title: '진주남강유등축제', region: '경남', venue: '진주성 일원', address: '경남 진주시 남강로 626', start_date: '2026-10-01', end_date: '2026-10-15', link_url: 'https://korean.visitkorea.or.kr' }),
+  ev({ id: 'sample:8', category: '축제', title: '안동국제탈춤페스티벌', region: '경북', venue: '탈춤공원 일원', address: '경북 안동시 육사로 239', start_date: '2026-09-25', end_date: '2026-10-04', link_url: 'https://korean.visitkorea.or.kr' }),
+  ev({ id: 'sample:9', category: '액티비티', title: '단양 패러글라이딩', region: '충북', venue: '단양 양방산 활공장', address: '충북 단양군 단양읍', start_date: null, end_date: '2027-10-04', link_url: 'https://korean.visitkorea.or.kr' }),
+  ev({ id: 'sample:10', category: '액티비티', title: '제주 카약 체험', region: '제주', venue: '쇠소깍', address: '제주 서귀포시 하효동', end_date: '2027-10-04', link_url: 'https://korean.visitkorea.or.kr' }),
+  ev({ id: 'sample:11', category: '공연', title: '대구국제오페라축제', region: '대구', venue: '대구오페라하우스', address: '대구 북구 호암로 15', start_date: '2026-10-02', end_date: '2026-11-08', link_url: 'https://www.kopis.or.kr' }),
+  ev({ id: 'sample:12', category: '전시', title: '광주비엔날레', region: '광주', venue: '광주비엔날레 전시관', address: '광주 북구 비엔날레로 111', start_date: '2026-09-05', end_date: '2026-12-01', link_url: 'https://www.gwangjubiennale.org' }),
+  ev({ id: 'sample:13', category: '액티비티', title: '가평 수상레저', region: '경기', venue: '북한강 일원', address: '경기 가평군 가평읍', end_date: '2027-10-04', link_url: 'https://korean.visitkorea.or.kr' }),
+];
+
+const filterLocal = (region: string, category: string) =>
+  SAMPLE_EVENTS.filter((e) => (region === '전국' || e.region === region || e.region === '전국') && (category === '전체' || e.category === category));
+
+/** Fetches events for a region (전국 = all). Falls back to samples when the table is empty or the request fails. */
+export async function getCultureEvents(region: string, category: string): Promise<{ events: CultureEvent[]; sample: boolean }> {
+  try {
+    let q = supabase.from('culture_events').select(COLS).order('start_date', { ascending: false, nullsFirst: false }).limit(200);
+    if (region !== '전국') q = q.in('region', [region, '전국']);
+    if (category !== '전체') q = q.eq('category', category);
+    const { data, error } = await q;
+    if (error) throw error;
+    if (data && data.length) return { events: data as CultureEvent[], sample: false };
+  } catch {
+    // offline or table missing
+  }
+  return { events: filterLocal(region, category), sample: true };
+}
+
+export async function getCultureEvent(id: string): Promise<CultureEvent | undefined> {
+  const s = SAMPLE_EVENTS.find((e) => e.id === id);
+  if (s) return s;
+  try {
+    const { data } = await supabase.from('culture_events').select(COLS).eq('id', id).maybeSingle();
+    return (data as CultureEvent | null) ?? undefined;
+  } catch {
+    return undefined;
+  }
+}
+
+export const formatPeriod = (e: CultureEvent) => {
+  const f = (s: string | null) => (s ? s.replace(/-/g, '.') : '');
+  if (e.category === '액티비티' && !e.start_date) return '상시';
+  if (e.start_date && e.end_date && e.start_date !== e.end_date) return `${f(e.start_date)} ~ ${f(e.end_date)}`;
+  return f(e.start_date ?? e.end_date) || '상시';
+};
