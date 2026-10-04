@@ -1,8 +1,10 @@
 import { router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { ActivityIndicator, Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Alert, Image, Pressable, ScrollView, StyleSheet, Text, TextInput, useWindowDimensions, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { KOBIS_CREDIT, KMDB_CREDIT, httpsUrl, formatPeriod, getNearbyStays, getCultureEvent, type CultureEvent } from '../../src/data/culture';
+import { KOBIS_CREDIT, KMDB_CREDIT, httpsUrl, formatPeriod, getNearbyStays, getCultureEvent, getEventImages, getEventReviews, saveEventReview, type CultureEvent, type EventReview } from '../../src/data/culture';
+import { requireAccount } from '../../src/lib/auth';
+import { addChur } from '../../src/lib/shop';
 import { openVendor, vendorsFor } from '../../src/lib/booking';
 import { colors, fonts } from '../../src/theme';
 
@@ -10,10 +12,42 @@ export default function EventDetail() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const [ev, setEv] = useState<CultureEvent | null>();
   const [stays, setStays] = useState<CultureEvent[]>([]);
+  const [images, setImages] = useState<string[]>([]);
+  const [page, setPage] = useState(0);
+  const [reviews, setReviews] = useState<EventReview[]>();
+  const [rating, setRating] = useState(0);
+  const [text, setText] = useState('');
+  const [saving, setSaving] = useState(false);
+  const { width } = useWindowDimensions();
+  const heroW = width - 40;
+  const loadReviews = () => getEventReviews(String(id)).then((r) => {
+    setReviews(r);
+    const m = r.find((x) => x.mine);
+    if (m) { setRating(m.rating); setText(m.text); }
+  });
+  useEffect(() => void loadReviews(), [id]);
+  const submit = async () => {
+    if (!rating || saving) return;
+    if (!(await requireAccount())) return;
+    setSaving(true);
+    const first = !reviews?.some((r) => r.mine);
+    const ok = await saveEventReview(String(id), rating, text);
+    setSaving(false);
+    if (!ok) return Alert.alert('저장하지 못했어요', '잠시 후 다시 시도해 주세요.');
+    if (first) { addChur(50, `review:${id}`); Alert.alert('후기 고마워요!', '츄르 50개를 받았어요. 냥냥상점에서 써보세요.'); }
+    loadReviews();
+  };
+  const avg = reviews?.length ? reviews.reduce((a, r) => a + r.rating, 0) / reviews.length : 0;
   useEffect(() => void getCultureEvent(String(id)).then((e) => setEv(e ?? null)), [id]);
   useEffect(() => {
     setStays([]);
-    if (ev) getNearbyStays(ev).then(setStays);
+    setImages([]);
+    setPage(0);
+    if (ev) {
+      getNearbyStays(ev).then(setStays);
+      setImages(ev.image_url ? [httpsUrl(ev.image_url)!] : []);
+      getEventImages(ev).then((imgs) => imgs.length && setImages(imgs));
+    }
   }, [ev]);
 
   const rows: [string, string | null][] = ev
@@ -33,7 +67,15 @@ export default function EventDetail() {
         <Text style={[styles.desc, { padding: 20 }]}>정보를 찾을 수 없어요.</Text>
       ) : (
         <ScrollView contentContainerStyle={styles.body}>
-          {!!ev.image_url && <Image source={{ uri: httpsUrl(ev.image_url)! }} style={styles.hero} resizeMode="cover" />}
+          {images.length > 0 && (
+            <View>
+              <ScrollView horizontal pagingEnabled showsHorizontalScrollIndicator={false} style={[styles.hero, { width: heroW }]}
+                onMomentumScrollEnd={(e) => setPage(Math.round(e.nativeEvent.contentOffset.x / heroW))}>
+                {images.map((u) => <Image key={u} source={{ uri: u }} style={{ width: heroW, height: '100%' }} resizeMode="cover" />)}
+              </ScrollView>
+              {images.length > 1 && <View style={styles.pageTag}><Text style={styles.pageText}>{page + 1} / {images.length}</Text></View>}
+            </View>
+          )}
           <Text style={styles.name}>{ev.title}</Text>
           <View style={styles.info}>
             {rows.filter(([, v]) => !!v).map(([k, v]) => (
@@ -54,6 +96,33 @@ export default function EventDetail() {
             </View>
             {ev.category === '영화' && <Text style={styles.credit}>{KOBIS_CREDIT}</Text>}
             {ev.poster_source === 'kmdb' && <Text style={styles.credit}>{KMDB_CREDIT}</Text>}
+          </View>
+          <View style={{ gap: 12 }}>
+            <View style={{ flexDirection: 'row', alignItems: 'baseline', gap: 8 }}>
+              <Text style={styles.section}>평점 · 후기</Text>
+              {!!reviews?.length && <Text style={styles.avg}>★ {avg.toFixed(1)} <Text style={styles.desc}>({reviews.length})</Text></Text>}
+            </View>
+            <View style={styles.info}>
+              <View style={{ flexDirection: 'row', gap: 6 }}>
+                {[1, 2, 3, 4, 5].map((n) => (
+                  <Pressable key={n} onPress={() => setRating(n)} hitSlop={6} accessibilityLabel={`별 ${n}개`}>
+                    <Text style={[styles.star, n <= rating && styles.starOn]}>★</Text>
+                  </Pressable>
+                ))}
+              </View>
+              <TextInput value={text} onChangeText={setText} placeholder="어땠는지 한 줄 남겨 주세요" placeholderTextColor="#7D748A" multiline maxLength={1000} style={styles.reviewInput} />
+              <Pressable style={[styles.submit, (!rating || saving) && { opacity: 0.5 }]} onPress={submit} disabled={!rating || saving}>
+                <Text style={styles.submitText}>{reviews?.some((r) => r.mine) ? '후기 수정' : '후기 남기기 · 츄르 50'}</Text>
+              </Pressable>
+            </View>
+            {reviews === undefined ? <ActivityIndicator color={colors.accent} /> : reviews.length === 0 ? (
+              <Text style={styles.desc}>아직 후기가 없어요. 첫 후기를 남겨 주세요!</Text>
+            ) : reviews.map((r) => (
+              <View key={r.id} style={styles.review}>
+                <Text style={styles.reviewHead}>{r.nickname}{r.mine ? ' (나)' : ''} · <Text style={styles.starSmall}>{'★'.repeat(r.rating)}</Text></Text>
+                {!!r.text && <Text style={styles.val}>{r.text}</Text>}
+              </View>
+            ))}
           </View>
           <View style={{ alignItems: 'center', gap: 6 }}>
             <Pressable style={styles.recordBtn} onPress={() => router.push('/capture')}>
@@ -85,7 +154,18 @@ const styles = StyleSheet.create({
   link: { color: colors.muted, fontFamily: fonts.semibold, fontSize: 15 },
   desc: { color: colors.muted, fontFamily: fonts.regular, fontSize: 14 },
   body: { padding: 20, gap: 18 },
-  hero: { width: '100%', aspectRatio: 3 / 4, borderRadius: 16, backgroundColor: colors.surface },
+  hero: { aspectRatio: 3 / 4, borderRadius: 16, backgroundColor: colors.surface, flexGrow: 0 },
+  pageTag: { position: 'absolute', right: 12, bottom: 12, backgroundColor: 'rgba(0,0,0,0.55)', borderRadius: 999, paddingHorizontal: 10, paddingVertical: 4 },
+  pageText: { color: '#fff', fontFamily: fonts.semibold, fontSize: 12 },
+  avg: { color: colors.accent, fontFamily: fonts.bold, fontSize: 16 },
+  star: { fontSize: 30, color: '#3A3448' },
+  starOn: { color: '#FFC94D' },
+  starSmall: { color: '#FFC94D' },
+  reviewInput: { minHeight: 64, color: colors.text, fontFamily: fonts.regular, fontSize: 14, textAlignVertical: 'top' },
+  submit: { backgroundColor: colors.accent, borderRadius: 12, paddingVertical: 12, alignItems: 'center' },
+  submitText: { color: colors.bg, fontFamily: fonts.bold, fontSize: 14 },
+  review: { gap: 6, paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: colors.border },
+  reviewHead: { color: colors.muted, fontFamily: fonts.semibold, fontSize: 13 },
   name: { color: colors.text, fontFamily: fonts.bold, fontSize: 24, lineHeight: 31, letterSpacing: -0.6 },
   info: { backgroundColor: colors.surface, borderRadius: 16, padding: 16, gap: 12 },
   row: { flexDirection: 'row', gap: 12 },

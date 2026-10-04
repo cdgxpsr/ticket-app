@@ -11,3 +11,6 @@ verify_jwt = false
 
 [functions.movies-live]
 verify_jwt = true
+
+[functions.event-images]
+verify_jwt = true

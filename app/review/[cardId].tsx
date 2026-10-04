@@ -29,7 +29,7 @@ export default function WriteReview() {
     await repo.createReview({ show, rating, text: text.trim(), cardId: card!.id });
     const total = await repo.addStamp(1);
     showToast(`발도장 1개 받았어요 · 모은 발도장 ${total}개`);
-    router.replace('/feed');
+    router.replace('/tickets');
   };
 
   return (
