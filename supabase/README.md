@@ -68,12 +68,12 @@ Apple은 `signInWithIdToken`이 익명 계정에 연결되지 않아 새 계정�
 
 ## 지역별 문화거리 (culture_events 동기화)
 
-`sync-culture` 엣지 함수가 매일 새벽 4시(KST) 아래 공공 API에서 공연·전시·축제·액티비티를 가져와 `public.culture_events`에 저장해요. 영화는 KOBIS 이용약관상 저장하지 않고 `movies-live` 함수가 실시간으로 조회해요(메모리 캐시 10분, 앱에 '출처: 영화관입장권통합전산망(KOBIS)' 표기). 키가 없는 소스는 건너뛰고, 테이블이 비어 있으면 앱은 예시 데이터를 보여줘요.
+`sync-culture` 엣지 함수가 매일 새벽 4시(KST) 아래 공공 API에서 공연·전시·축제·액티비티·숙박(KorService2 `searchStay2`, 시도별)을 가져와 `public.culture_events`에 저장해요. 영화는 KOBIS 이용약관상 저장하지 않고 `movies-live` 함수가 실시간으로 조회해요(메모리 캐시 10분, 앱에 '출처: 영화관입장권통합전산망(KOBIS)' 표기). 키가 없는 소스는 건너뛰고, 테이블이 비어 있으면 앱은 예시 데이터를 보여줘요.
 
 ### 1. API 키 발급
 - **KOBIS_KEY** (영화 박스오피스, `movies-live`에서 실시간 조회만): https://www.kobis.or.kr/kobisopenapi → 회원가입 → 키 발급/관리 → **오픈API 키 발급**.
 - **KOPIS_KEY** (공연): https://www.kopis.or.kr → 공연예술통합전산망 **오픈API 신청** → 승인 후 서비스키 확인.
-- **TOUR_API_KEY** (축제·전시·레포츠): https://www.data.go.kr → '**한국관광공사_국문 관광정보 서비스_GW**' 검색 → 활용신청 → 마이페이지에서 일반 인증키(**Decoding** 키 권장) 복사.
+- **TOUR_API_KEY** (축제·전시·레포츠·숙박): https://www.data.go.kr → '**한국관광공사_국문 관광정보 서비스_GW**' 검색 → 활용신청 → 마이페이지에서 일반 인증키(**Decoding** 키 권장) 복사.
 
 ### 2. 마이그레이션
 `npx supabase db push` (또는 SQL Editor에서 `migrations/20261004000000_culture_events.sql` 실행).

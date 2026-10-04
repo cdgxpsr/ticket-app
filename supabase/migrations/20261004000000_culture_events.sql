@@ -1,8 +1,8 @@
--- Regional culture events (영화/공연/전시/축제/액티비티), filled daily by the sync-culture edge function.
+-- Regional culture events (영화/공연/전시/축제/액티비티/숙박), filled daily by the sync-culture edge function.
 create table if not exists public.culture_events (
   id text primary key,               -- source:sourceId
   source text not null,
-  category text not null check (category in ('영화','공연','전시','축제','액티비티')),
+  category text not null check (category in ('영화','공연','전시','축제','액티비티','숙박')),
   title text not null,
   summary text,
   image_url text,

@@ -109,14 +109,14 @@ function tourRow(i: Record<string, string>, category: string, start: string | nu
   const addr = [str(i.addr1), str(i.addr2)].filter(Boolean).join(' ') || null;
   return {
     id: `tour:${i.contentid}`, source: 'tour', category, title: i.title,
-    summary: null, image_url: str(i.firstimage) ?? str(i.firstimage2), venue: null,
+    summary: str(i.tel), image_url: str(i.firstimage) ?? str(i.firstimage2), venue: null,
     region: TOUR_AREA[String(i.areacode ?? '')] ?? regionFromText(addr) ?? '서울', address: addr,
     start_date: start, end_date: end,
     link_url: `https://korean.visitkorea.or.kr/detail/ms_detail.do?cotid=${i.contentid}`,
     lat: num(i.mapy), lng: num(i.mapx), updated_at: new Date().toISOString(),
   };
 }
-async function tour(key: string): Promise<{ festivals: Row[]; leisure: Row[]; culture: Row[] }> {
+async function tour(key: string): Promise<{ festivals: Row[]; leisure: Row[]; culture: Row[]; stays: Row[] }> {
   const k = key.includes('%') ? key : encodeURIComponent(key);
   const today = ymd(kst());
   const farEnd = iso(ymd(kst(365)));
@@ -128,7 +128,12 @@ async function tour(key: string): Promise<{ festivals: Row[]; leisure: Row[]; cu
   const cul = await tourList(k, 'areaBasedList2', 'contentTypeId=14&arrange=Q').catch((e) => { console.error('culture', e); return []; });
   const culture = cul.filter((i) => EXHIBIT.test(i.title ?? '') || /미술관|박물관|갤러리|전시/.test(i.title ?? ''))
     .map((i) => tourRow(i, '전시', null, farEnd));
-  return { festivals, leisure, culture };
+  const stays: Row[] = [];
+  for (const area of Object.keys(TOUR_AREA)) {
+    const st = await tourList(k, 'searchStay2', `areaCode=${area}&arrange=Q`).catch((e) => { console.error('stay', area, e); return []; });
+    stays.push(...st.map((i) => tourRow(i, '숙박', null, farEnd)));
+  }
+  return { festivals, leisure, culture, stays };
 }
 
 /* ---------- PostgREST ---------- */
@@ -176,6 +181,7 @@ Deno.serve(async (req) => {
       counts.festival = await upsert(t.festivals);
       counts.leisure = await upsert(t.leisure);
       counts.exhibition = await upsert(t.culture);
+      counts.stay = await upsert(t.stays);
     } catch (e) { counts.tour = `error: ${(e as Error).message}`; }
   } else counts.tour = 'skipped (no key)';
   try { await purge(); counts.purged = 'ok'; } catch (e) { counts.purged = `error: ${(e as Error).message}`; }

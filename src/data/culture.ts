@@ -3,7 +3,7 @@ import { ensureSession, supabase } from '../lib/supabase';
 export const KOBIS_CREDIT = '출처: 영화관입장권통합전산망(KOBIS)';
 
 export const REGIONS = ['전국', '서울', '부산', '대구', '인천', '광주', '대전', '울산', '세종', '경기', '강원', '충북', '충남', '전북', '전남', '경북', '경남', '제주'] as const;
-export const CULTURE_CATEGORIES = ['전체', '영화', '공연', '전시', '축제', '액티비티'] as const;
+export const CULTURE_CATEGORIES = ['전체', '영화', '공연', '전시', '축제', '액티비티', '숙박'] as const;
 
 export type CultureEvent = {
   id: string; source: string; category: string; title: string; summary: string | null; image_url: string | null;
@@ -30,7 +30,27 @@ export const SAMPLE_EVENTS: CultureEvent[] = [
   ev({ id: 'sample:11', category: '공연', title: '대구국제오페라축제', region: '대구', venue: '대구오페라하우스', address: '대구 북구 호암로 15', start_date: '2026-10-02', end_date: '2026-11-08', link_url: 'https://www.kopis.or.kr' }),
   ev({ id: 'sample:12', category: '전시', title: '광주비엔날레', region: '광주', venue: '광주비엔날레 전시관', address: '광주 북구 비엔날레로 111', start_date: '2026-09-05', end_date: '2026-12-01', link_url: 'https://www.gwangjubiennale.org' }),
   ev({ id: 'sample:13', category: '액티비티', title: '가평 수상레저', region: '경기', venue: '북한강 일원', address: '경기 가평군 가평읍', end_date: '2027-10-04', link_url: 'https://korean.visitkorea.or.kr' }),
+  ev({ id: 'sample:14', category: '숙박', title: '해운대 오션뷰 호텔', region: '부산', venue: '해운대 오션뷰 호텔', summary: '호텔 · 051-000-0000', address: '부산 해운대구 해운대해변로 264', end_date: '2027-10-04', lat: 35.1587, lng: 129.1604, link_url: 'https://korean.visitkorea.or.kr' }),
+  ev({ id: 'sample:15', category: '숙박', title: '북촌 한옥스테이', region: '서울', venue: '북촌 한옥스테이', summary: '한옥 · 02-000-0000', address: '서울 종로구 계동길 37', end_date: '2027-10-04', lat: 37.5826, lng: 126.9857, link_url: 'https://korean.visitkorea.or.kr' }),
+  ev({ id: 'sample:16', category: '숙박', title: '제주 서귀포 게스트하우스', region: '제주', venue: '서귀포 게스트하우스', summary: '게스트하우스 · 064-000-0000', address: '제주 서귀포시 중정로 22', end_date: '2027-10-04', lat: 33.2489, lng: 126.5641, link_url: 'https://korean.visitkorea.or.kr' }),
 ];
+
+/** Lodging in the same region, nearest first (simple equirectangular distance), top 5. */
+export async function getNearbyStays(e: CultureEvent): Promise<CultureEvent[]> {
+  if (e.lat == null || e.lng == null) return [];
+  let rows: CultureEvent[] = [];
+  try {
+    const { data } = await supabase.from('culture_events').select(COLS).eq('category', '숙박').eq('region', e.region)
+      .not('lat', 'is', null).not('lng', 'is', null).limit(300);
+    rows = (data as CultureEvent[] | null) ?? [];
+  } catch {
+    // offline
+  }
+  if (!rows.length) rows = SAMPLE_EVENTS.filter((s) => s.category === '숙박' && s.region === e.region);
+  const cos = Math.cos((e.lat * Math.PI) / 180);
+  const d = (s: CultureEvent) => ((s.lat ?? 0) - e.lat!) ** 2 + (((s.lng ?? 0) - e.lng!) * cos) ** 2;
+  return rows.filter((s) => s.id !== e.id && s.lat != null && s.lng != null).sort((a, b) => d(a) - d(b)).slice(0, 5);
+}
 
 const filterLocal = (region: string, category: string) =>
   SAMPLE_EVENTS.filter((e) => (region === '전국' || e.region === region || e.region === '전국') && (category === '전체' || e.category === category));
@@ -86,7 +106,7 @@ export async function getCultureEvent(id: string): Promise<CultureEvent | undefi
 
 export const formatPeriod = (e: CultureEvent) => {
   const f = (s: string | null) => (s ? s.replace(/-/g, '.') : '');
-  if (e.category === '액티비티' && !e.start_date) return '상시';
+  if ((e.category === '액티비티' || e.category === '숙박') && !e.start_date) return '상시';
   if (e.start_date && e.end_date && e.start_date !== e.end_date) return `${f(e.start_date)} ~ ${f(e.end_date)}`;
   return f(e.start_date ?? e.end_date) || '상시';
 };

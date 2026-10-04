@@ -2,13 +2,18 @@ import { router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { ActivityIndicator, Image, Linking, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { KOBIS_CREDIT, formatPeriod, getCultureEvent, type CultureEvent } from '../../src/data/culture';
+import { KOBIS_CREDIT, formatPeriod, getNearbyStays, getCultureEvent, type CultureEvent } from '../../src/data/culture';
 import { colors, fonts } from '../../src/theme';
 
 export default function EventDetail() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const [ev, setEv] = useState<CultureEvent | null>();
+  const [stays, setStays] = useState<CultureEvent[]>([]);
   useEffect(() => void getCultureEvent(String(id)).then((e) => setEv(e ?? null)), [id]);
+  useEffect(() => {
+    setStays([]);
+    if (ev) getNearbyStays(ev).then(setStays);
+  }, [ev]);
 
   const rows: [string, string | null][] = ev
     ? [['분류', `${ev.category} · ${ev.region}`], ['기간', formatPeriod(ev)], ['장소', ev.venue], ['주소', ev.address], ['소개', ev.summary]]
@@ -46,6 +51,17 @@ export default function EventDetail() {
           <Pressable style={styles.btn} onPress={() => router.push('/capture')}>
             <Text style={styles.btnText}>티켓 등록하기</Text>
           </Pressable>
+          {stays.length > 0 && (
+            <View style={{ gap: 10 }}>
+              <Text style={styles.section}>근처 숙소</Text>
+              {stays.map((s) => (
+                <Pressable key={s.id} style={styles.info} onPress={() => router.push({ pathname: '/event/[id]', params: { id: s.id } })}>
+                  <Text style={styles.stayName} numberOfLines={1}>{s.title}</Text>
+                  {!!(s.address || s.summary) && <Text style={styles.desc} numberOfLines={1}>{s.address || s.summary}</Text>}
+                </Pressable>
+              ))}
+            </View>
+          )}
         </ScrollView>
       )}
     </SafeAreaView>
@@ -67,5 +83,7 @@ const styles = StyleSheet.create({
   val: { flex: 1, color: colors.text, fontFamily: fonts.regular, fontSize: 14, lineHeight: 20 },
   btn: { borderRadius: 12, paddingVertical: 14, alignItems: 'center', backgroundColor: colors.surface, borderColor: colors.border, borderWidth: 1 },
   primary: { backgroundColor: colors.accent, borderColor: colors.accent },
+  section: { color: colors.text, fontFamily: fonts.bold, fontSize: 18, marginTop: 8 },
+  stayName: { color: colors.text, fontFamily: fonts.semibold, fontSize: 15 },
   btnText: { color: colors.text, fontFamily: fonts.bold, fontSize: 15 },
 });

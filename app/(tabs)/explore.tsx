@@ -10,7 +10,7 @@ import { CULTURE_CATEGORIES, KOBIS_CREDIT, REGIONS, formatPeriod, getCultureEven
 import { colors, fonts } from '../../src/theme';
 
 const REGION_KEY = 'explore.region';
-const CAT_COLOR: Record<string, string> = { 영화: '#5B4B8A', 공연: '#8A3B5B', 전시: '#2F6B6B', 축제: '#A0522D', 액티비티: '#3E6B3A' };
+const CAT_COLOR: Record<string, string> = { 영화: '#5B4B8A', 공연: '#8A3B5B', 전시: '#2F6B6B', 축제: '#A0522D', 액티비티: '#3E6B3A', 숙박: '#4A5A80' };
 
 const GROUP: Record<string, string[]> = { 공연: ['공연', '뮤지컬', '연극', '콘서트'], 전시: ['전시', '박물관'], 영화: ['영화'], 액티비티: ['액티비티', '스포츠'] };
 
