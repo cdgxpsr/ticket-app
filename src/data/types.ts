@@ -34,6 +34,7 @@ export type BoardPost = {
   likes: number;
   liked: boolean;
   comments: Comment[];
+  images?: string[];
 };
 
 export type ExploreItem = Show & { rating: number; reviews: number };
@@ -41,4 +42,4 @@ export type Place = { id: string; name: string; info: string };
 export type Explore = { categories: string[]; popular: ExploreItem[]; nearby: Place[] };
 
 export type NewReview = { show: Show; rating: number; text: string; cardId?: string };
-export type NewBoardPost = { board: Board; title: string; body: string; tag?: string };
+export type NewBoardPost = { board: Board; title: string; body: string; tag?: string; images?: string[] };

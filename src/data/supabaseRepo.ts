@@ -1,3 +1,4 @@
+import { uploadPostImage } from '../lib/cloud';
 import { DEFAULT_AVATAR } from '../avatar/cat';
 import { supabase, uid } from '../lib/supabase';
 import { localRepo } from './localRepo';
@@ -32,11 +33,11 @@ const toFeed = (r: any, me: string): FeedPost => ({
 });
 const toPost = (r: any, me: string): BoardPost => ({
   id: r.id, board: r.board, author: toUser(r.author), title: r.title, body: r.body, tag: r.tag ?? undefined,
-  verified: r.verified, createdAt: ts(r.created_at), ...social(r.likes, r.comments, me),
+  verified: r.verified, createdAt: ts(r.created_at), images: r.images ?? [], ...social(r.likes, r.comments, me),
 });
 
 const REVIEW_SEL = `id, show, rating, text, created_at, card_id, author:profiles!reviews_author_fkey(${PROFILE}), ${SOCIAL}`;
-const POST_SEL = `id, board, title, body, tag, verified, created_at, author:profiles!board_posts_author_fkey(${PROFILE}), ${SOCIAL}`;
+const POST_SEL = `id, board, title, body, tag, verified, images, created_at, author:profiles!board_posts_author_fkey(${PROFILE}), ${SOCIAL}`;
 
 async function findTarget(id: string): Promise<'review' | 'post' | undefined> {
   const r = await supabase.from('reviews').select('id').eq('id', id).maybeSingle();
@@ -71,9 +72,10 @@ export const supabaseRepo: Repo = {
     const row = must(await supabase.from('board_posts').select(POST_SEL).eq('id', id).maybeSingle());
     return row ? toPost(row, me) : undefined;
   },
-  async createPost({ board, title, body, tag }) {
+  async createPost({ board, title, body, tag, images = [] }) {
     const me = await uid();
-    return toPost(must(await supabase.from('board_posts').insert({ board, title, body, tag }).select(POST_SEL).single()), me);
+    const urls = await Promise.all(images.map((u) => uploadPostImage(u)));
+    return toPost(must(await supabase.from('board_posts').insert({ board, title, body, tag, images: urls }).select(POST_SEL).single()), me);
   },
   async like(postId) {
     const me = await uid();

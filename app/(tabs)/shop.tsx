@@ -1,12 +1,12 @@
 import { useFocusEffect, useLocalSearchParams } from 'expo-router';
 import { useCallback, useEffect, useState } from 'react';
-import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Alert, Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Svg, { Path } from 'react-native-svg';
 import { AvatarOptions, BACKS, BGS, BODIES, COATS, EXPRS, FACES } from '../../src/avatar/cat';
 import { CatAvatar } from '../../src/components/CatAvatar';
 import { getAvatar, getUnlockedItems, saveAvatar } from '../../src/lib/avatar';
-import { balance, buy, CATALOG, claimDaily, isOwned, itemLabel, PER_TICKET, SHOP_SLOTS, type ShopItem, type Slot } from '../../src/lib/shop';
+import { balance, buy, CATALOG, CHURU_PACKS, claimDaily, isOwned, itemLabel, PER_TICKET, SHOP_SLOTS, type ShopItem, type Slot } from '../../src/lib/shop';
 import { colors, fonts } from '../../src/theme';
 
 const TAG_COLOR: Record<string, string> = { NEW: '#4DC3FF', HOT: '#FF6B8B', 한정: '#FFC94D' };
@@ -33,6 +33,7 @@ export default function Shop() {
   const [coins, setCoins] = useState(balance);
   const [unlocked, setUnlocked] = useState<string[]>([]);
   const [, bump] = useState(0);
+  const [charge, setCharge] = useState(false);
 
   useEffect(() => { if (params.tab === 'inv') setMode('inv'); }, [params.tab]);
   useFocusEffect(useCallback(() => {
@@ -45,6 +46,7 @@ export default function Shop() {
   }, []));
 
   const owned = (s: Slot, v: string) => isOwned(s, v, unlocked);
+  const free = ALL[slot].filter((v) => v !== 'none' && !CATALOG.some((i) => i.slot === slot && i.value === v));
   const shopItems = CATALOG.filter((i) => i.slot === slot);
   const invItems = ALL[slot].filter((v) => owned(slot, v));
   const tried = CATALOG.filter((i) => draft[i.slot] === i.value && !owned(i.slot, i.value));
@@ -95,7 +97,9 @@ export default function Shop() {
             </Pressable>
           ))}
         </View>
-        <View style={styles.wallet}><Churu /><Text style={styles.walletText}>{coins.toLocaleString()}</Text></View>
+        <Pressable style={styles.wallet} onPress={() => setCharge(true)} accessibilityLabel={`츄르 ${coins}개, 충전하기`}>
+          <Churu /><Text style={styles.walletText}>{coins.toLocaleString()}</Text><Text style={styles.plus}>＋</Text>
+        </Pressable>
       </View>
       <View style={styles.stage}>
         <CatAvatar size={170} avatar={draft} />
@@ -112,7 +116,7 @@ export default function Shop() {
         </ScrollView>
       </View>
       <ScrollView contentContainerStyle={styles.grid}>
-        {mode === 'shop' ? shopItems.map((i) => cell(i.slot, i.value, i)) : invItems.map((v) => cell(slot, v))}
+        {mode === 'shop' ? [...free.map((v) => cell(slot, v)), ...shopItems.map((i) => cell(i.slot, i.value, i))] : invItems.map((v) => cell(slot, v))}
         <Text style={styles.how}>츄르 모으는 법 · 티켓 기록 +{PER_TICKET} · 후기 작성 +50 · 매일 상점 방문 +10</Text>
       </ScrollView>
       {changed && (
@@ -124,6 +128,28 @@ export default function Shop() {
           )}
         </View>
       )}
+      <Modal visible={charge} transparent animationType="slide" onRequestClose={() => setCharge(false)}>
+        <Pressable style={styles.backdrop} onPress={() => setCharge(false)}>
+          <Pressable style={styles.sheet} onPress={() => {}}>
+            <View style={styles.sheetHead}>
+              <Text style={styles.sheetTitle}>츄르 충전</Text>
+              <View style={styles.wallet}><Churu /><Text style={styles.walletText}>{coins.toLocaleString()}</Text></View>
+            </View>
+            {CHURU_PACKS.map((p) => (
+              <Pressable key={p.amount} style={styles.pack}
+                onPress={() => Alert.alert('결제는 정식 출시 때 열려요', '지금은 테스트 기간이라 결제를 받지 않아요.\n티켓 기록, 후기, 매일 방문으로 츄르를 모아 보세요!')}>
+                <Churu size={22} />
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.packAmount}>츄르 {p.amount.toLocaleString()}개{p.bonus ? <Text style={styles.bonus}>  +{p.bonus} 보너스</Text> : null}</Text>
+                  {!!p.tag && <Text style={styles.best}>{p.tag}</Text>}
+                </View>
+                <View style={styles.priceBtn}><Text style={styles.priceBtnText}>{p.price}</Text></View>
+              </Pressable>
+            ))}
+            <Text style={styles.how}>무료로 모으기 · 티켓 기록 +{PER_TICKET} · 후기 작성 +50 · 매일 상점 방문 +10</Text>
+          </Pressable>
+        </Pressable>
+      </Modal>
     </SafeAreaView>
   );
 }
@@ -135,6 +161,17 @@ const styles = StyleSheet.create({
   mode: { color: '#6F6680', fontFamily: fonts.bold, fontSize: 22, lineHeight: 30 },
   modeOn: { color: colors.text, fontSize: 28, lineHeight: 36 },
   wallet: { flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: colors.surface, borderRadius: 999, paddingHorizontal: 12, paddingVertical: 7, borderWidth: 1, borderColor: colors.border },
+  plus: { color: colors.accent, fontFamily: fonts.bold, fontSize: 15, marginLeft: 2 },
+  backdrop: { flex: 1, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'flex-end' },
+  sheet: { backgroundColor: colors.surface, borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 20, paddingBottom: 40, gap: 10 },
+  sheetHead: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 },
+  sheetTitle: { color: colors.text, fontFamily: fonts.bold, fontSize: 22, lineHeight: 30 },
+  pack: { flexDirection: 'row', alignItems: 'center', gap: 12, padding: 14, borderRadius: 16, backgroundColor: colors.bg, borderWidth: 1, borderColor: colors.border },
+  packAmount: { color: colors.text, fontFamily: fonts.bold, fontSize: 16, lineHeight: 22 },
+  bonus: { color: '#FFC27A', fontFamily: fonts.semibold, fontSize: 13 },
+  best: { color: '#FF6B8B', fontFamily: fonts.bold, fontSize: 11, lineHeight: 15 },
+  priceBtn: { backgroundColor: colors.accent, borderRadius: 10, paddingHorizontal: 12, paddingVertical: 8 },
+  priceBtnText: { color: colors.bg, fontFamily: fonts.bold, fontSize: 14, lineHeight: 19 },
   walletText: { color: colors.text, fontFamily: fonts.bold, fontSize: 15 },
   stage: { marginHorizontal: 16, alignItems: 'center', paddingVertical: 10, borderRadius: 24, backgroundColor: '#2A2440', borderWidth: 1, borderColor: '#3A3352' },
   fitting: { color: '#A99FC0', fontFamily: fonts.regular, fontSize: 12, marginTop: 2 },

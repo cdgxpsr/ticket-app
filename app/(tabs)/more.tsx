@@ -21,24 +21,6 @@ export default function More() {
   }, []));
   return (
     <Screen title="더보기" header={<Pressable onPress={() => router.push({ pathname: '/shop', params: { tab: 'inv' } })} accessibilityLabel="아바타 꾸미기"><CatAvatar size={56} /></Pressable>}>
-      <View style={styles.group}>
-        <Pressable style={styles.row} onPress={() => router.push({ pathname: '/shop', params: { tab: 'inv' } })}>
-          <Text style={styles.label}>내 고양이 꾸미기</Text>
-          <Text style={styles.value}>냥냥상점 · 인벤토리</Text>
-        </Pressable>
-        <View style={[styles.row, styles.divider]}>
-          <Text style={styles.label}>모은 발도장</Text>
-          <Text style={styles.value}>{stamps}개</Text>
-        </View>
-        <Pressable style={[styles.row, styles.divider]} onPress={() => router.push('/friends')}>
-          <Text style={styles.label}>친구</Text>
-          <Text style={styles.value}>목록 · 코드로 추가</Text>
-        </Pressable>
-        <Pressable style={[styles.row, styles.divider]} onPress={() => router.push('/invite')}>
-          <Text style={styles.label}>친구 초대</Text>
-          <Text style={styles.value}>아이템 선물</Text>
-        </Pressable>
-      </View>
       <Text style={styles.section}>계정</Text>
       <View style={styles.group}>
         {anon ? (
@@ -52,6 +34,24 @@ export default function More() {
             <Text style={styles.value}>로그인됨</Text>
           </Pressable>
         )}
+      </View>
+      <View style={styles.group}>
+        <Pressable style={styles.row} onPress={() => router.push('/saved')}>
+          <Text style={styles.label}>저장한 문화 소식</Text>
+          <Text style={styles.value}>♡ 모아보기</Text>
+        </Pressable>
+        <View style={[styles.row, styles.divider]}>
+          <Text style={styles.label}>모은 발도장</Text>
+          <Text style={styles.value}>{stamps}개</Text>
+        </View>
+        <Pressable style={[styles.row, styles.divider]} onPress={() => router.push('/friends')}>
+          <Text style={styles.label}>친구</Text>
+          <Text style={styles.value}>목록 · 코드로 추가</Text>
+        </Pressable>
+        <Pressable style={[styles.row, styles.divider]} onPress={() => router.push('/invite')}>
+          <Text style={styles.label}>친구 초대</Text>
+          <Text style={styles.value}>아이템 선물</Text>
+        </Pressable>
       </View>
       <Text style={styles.section}>설정</Text>
       <View style={styles.group}>

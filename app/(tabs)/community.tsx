@@ -1,6 +1,6 @@
 import { router, useFocusEffect } from 'expo-router';
 import { useCallback, useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { CatAvatar } from '../../src/components/CatAvatar';
 import { Placeholder } from '../../src/components/Screen';
@@ -37,6 +37,16 @@ export default function Community() {
                   {p.body}
                 </Text>
               </View>
+              {!!p.images?.length && (
+                <View style={styles.photos}>
+                  {p.images.slice(0, 3).map((u, k) => (
+                    <View key={u} style={styles.photoWrap}>
+                      <Image source={{ uri: u }} style={styles.photo} />
+                      {k === 2 && p.images!.length > 3 && <View style={styles.more}><Text style={styles.moreText}>+{p.images!.length - 3}</Text></View>}
+                    </View>
+                  ))}
+                </View>
+              )}
               <Text style={[styles.muted, hero && { color: '#F1D9DC' }]}>{board === '질문' ? '답변' : '댓글'} {p.comments.length} · 좋아요 {p.likes}</Text>
             </Pressable>
           );
@@ -62,6 +72,11 @@ const styles = StyleSheet.create({
   body: { flex: 1, color: '#D9D1E3', fontFamily: fonts.regular, fontSize: 14, lineHeight: 21 },
   verified: { color: colors.accent, fontFamily: fonts.semibold },
   muted: { color: '#8E859A', fontFamily: fonts.regular, fontSize: 13 },
+  photos: { flexDirection: 'row', gap: 6 },
+  photoWrap: { flex: 1, aspectRatio: 1, maxWidth: '33%', borderRadius: 12, overflow: 'hidden' },
+  photo: { width: '100%', height: '100%' },
+  more: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.5)', alignItems: 'center', justifyContent: 'center' },
+  moreText: { color: '#fff', fontFamily: fonts.bold, fontSize: 18 },
   fab: { position: 'absolute', right: 20, bottom: 20, height: 52, paddingHorizontal: 22, borderRadius: 26, backgroundColor: colors.accent, justifyContent: 'center' },
   fabText: { color: colors.bg, fontFamily: fonts.bold, fontSize: 16 },
 });

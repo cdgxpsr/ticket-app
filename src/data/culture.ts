@@ -1,3 +1,4 @@
+import { listSaved } from '../lib/saved';
 import { ensureSession, supabase } from '../lib/supabase';
 
 export const KOBIS_CREDIT = '출처: 영화관입장권통합전산망(KOBIS)';
@@ -103,10 +104,11 @@ export async function getCultureEvent(id: string): Promise<CultureEvent | undefi
   if (s) return s;
   try {
     const { data } = await supabase.from('culture_events').select(COLS).eq('id', id).maybeSingle();
-    return (data as CultureEvent | null) ?? undefined;
+    if (data) return data as CultureEvent;
   } catch {
-    return undefined;
+    // offline: fall through to saved snapshot
   }
+  return (await listSaved()).find((e) => e.id === id);
 }
 
 export const formatPeriod = (e: CultureEvent) => {
@@ -196,4 +198,16 @@ export function curate(events: CultureEvent[], interests: string[]): CultureEven
     if (i > events.length) break;
   }
   return out;
+}
+
+export type DateSpan = { from: string; to: string } | null;
+
+export const ymdLocal = (d: Date) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+
+/** Overlap test: the event runs at some point inside the picked days. Undated (상시) events always match. */
+export function inRange(e: CultureEvent, span: DateSpan): boolean {
+  if (!span) return true;
+  const start = e.start_date ?? '0000-01-01';
+  const end = e.end_date ?? e.start_date ?? '9999-12-31';
+  return start <= span.to && end >= span.from;
 }

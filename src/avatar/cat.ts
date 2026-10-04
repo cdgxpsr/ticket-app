@@ -1,6 +1,6 @@
 // Port of design generator cat.py: flat, outlined sitting cat built from layers.
-export const COATS = ['cheese', 'white', 'black', 'gray', 'calico'] as const;
-export const EXPRS = ['happy', 'derp', 'deadpan', 'smug', 'sparkle'] as const;
+export const COATS = ['cheese', 'white', 'black', 'gray', 'calico', 'cream', 'brown', 'choco', 'tuxedo', 'siamese', 'pink', 'mint', 'lavender', 'sky', 'lemon', 'gold'] as const;
+export const EXPRS = ['happy', 'derp', 'deadpan', 'smug', 'sparkle', 'wink', 'love', 'sleepy', 'cry', 'angry', 'surprised', 'tongue', 'starry'] as const;
 export const FACES = ['none', 'beret', 'glasses', 'shades', 'crown', 'flower', 'tophat', 'ribbon', 'headphones', 'partyhat', 'halo', 'heartglasses', 'mustache', 'cap', 'witchhat', 'bunnyears', 'santahat', 'monocle'] as const;
 export const BODIES = ['none', 'scarf', 'bowtie', 'ticketbag', 'necklace', 'camera', 'popcorn', 'hanbok', 'tie', 'lei', 'medal', 'bell'] as const;
 export const BACKS = ['none', 'wings', 'cape', 'balloon', 'guitar', 'backpack', 'devilwings', 'butterfly', 'rainbow'] as const;
@@ -24,6 +24,17 @@ const COAT_STYLE: Record<Coat, { fill: string; mark: string; mask: boolean; patc
   black: { fill: '#2E2626', mark: '#2E2626', mask: false },
   gray: { fill: '#C9CDD2', mark: '#9AA0A8', mask: true },
   calico: { fill: '#FFFFFF', mark: '#F2B36A', mask: false, patches: true },
+  cream: { fill: '#FCE7C8', mark: '#EAC89A', mask: true },
+  brown: { fill: '#B07A4F', mark: '#8A5A36', mask: true },
+  choco: { fill: '#6B4630', mark: '#4E3222', mask: false },
+  tuxedo: { fill: '#2E2626', mark: '#2E2626', mask: true },
+  siamese: { fill: '#F4E6D2', mark: '#6B4E3D', mask: false },
+  pink: { fill: '#FFC2D6', mark: '#F59AB8', mask: true },
+  mint: { fill: '#BDEBDA', mark: '#8CD4BC', mask: true },
+  lavender: { fill: '#D8C8FF', mark: '#B7A0F5', mask: true },
+  sky: { fill: '#BFE3FF', mark: '#8CC8F5', mask: true },
+  lemon: { fill: '#FFF0A0', mark: '#F2D660', mask: true },
+  gold: { fill: '#F5C542', mark: '#D9A21B', mask: false },
 };
 const SW = 6;
 
@@ -161,6 +172,26 @@ function expression(kind: Expr): string {
       return `<path d="M68 86h20M112 86h20" ${O5}/><path d="M95 100h10" ${O4}/><path d="M140 66q6 8 0 12q-6-4 0-12z" fill="#8FD3F5"/>`;
     case 'smug':
       return `<path d="M68 88q10-8 20 0M112 88q10-8 20 0" ${ON5}/><path d="M94 99q5 5 10 0q3 4 8-2" ${ON4}/>`;
+    case 'wink':
+      return `<circle cx="78" cy="86" r="8" fill="${INK}"/><path d="M112 88q10-8 20 0" ${ON5}/><path d="M92 98q4 6 8 0q4 6 8 0" ${ON4}/>`;
+    case 'love': {
+      const h = (cx: number) => `<path d="M${cx} 94c-12-7-14-15-8-19 4-3 7-1 8 2 1-3 4-5 8-2 6 4 4 12-8 19z" fill="#FF4F7B"/>`;
+      return h(78) + h(122) + `<path d="M92 99q4 6 8 0q4 6 8 0" ${ON4}/>`;
+    }
+    case 'sleepy':
+      return `<path d="M68 88q10 6 20 0M112 88q10 6 20 0" ${ON5}/><ellipse cx="100" cy="102" rx="4" ry="5" fill="#F07A6A" ${O3}/><path d="M140 60h10l-10 10h10" ${ON4}/>`;
+    case 'cry':
+      return `<path d="M68 84q10-6 20 0M112 84q10-6 20 0" ${ON5}/><path d="M74 90q-2 14 4 22M126 90q2 14-4 22" stroke="#6EC1E4" stroke-width="6" fill="none" stroke-linecap="round"/><path d="M92 104q8-8 16 0" ${ON4}/>`;
+    case 'angry':
+      return `<path d="M66 76l22 8M134 76l-22 8" ${O5}/><circle cx="80" cy="90" r="6" fill="${INK}"/><circle cx="120" cy="90" r="6" fill="${INK}"/><path d="M92 104q8-6 16 0" ${ON4}/>`;
+    case 'surprised':
+      return `<circle cx="78" cy="86" r="9" fill="#fff" ${O4}/><circle cx="78" cy="86" r="4" fill="${INK}"/><circle cx="122" cy="86" r="9" fill="#fff" ${O4}/><circle cx="122" cy="86" r="4" fill="${INK}"/><ellipse cx="100" cy="104" rx="5" ry="7" fill="#7A3E3E" ${O3}/>`;
+    case 'tongue':
+      return `<path d="M68 88q10-8 20 0M112 88q10-8 20 0" ${ON5}/><path d="M92 98q4 5 8 0q4 5 8 0" ${ON4}/><path d="M95 101q5 14 10 0z" fill="#F07A6A" ${O3}/>`;
+    case 'starry': {
+      const st = (cx: number) => `<path d="M${cx} 76l3 7 7 1-5 5 1 7-6-3-6 3 1-7-5-5 7-1z" fill="#FFD24D" ${O3}/>`;
+      return st(78) + st(122) + `<path d="M92 100q8 8 16 0" ${ON4}/>`;
+    }
     case 'sparkle':
       return `<circle cx="78" cy="86" r="10" fill="${INK}"/><circle cx="122" cy="86" r="10" fill="${INK}"/><circle cx="81" cy="82" r="3.5" fill="#fff"/><circle cx="125" cy="82" r="3.5" fill="#fff"/><circle cx="75" cy="90" r="1.8" fill="#fff"/><circle cx="119" cy="90" r="1.8" fill="#fff"/><path d="M93 99q3.5 5 7 0q3.5 5 7 0" ${ON4}/>`;
   }
@@ -190,11 +221,12 @@ export function catSvg(opts: Partial<AvatarOptions> = {}): string {
   if (C.mask) s += '<path d="M56 104c4-20 24-22 44-14 20-8 40-6 44 14-4 20-24 28-44 28s-40-8-44-28z" fill="#FFFFFF"/>';
   if (C.patches)
     s += '<path d="M44 76c4-22 18-34 36-36-2 18-14 34-36 36z" fill="#4A403C"/><path d="M156 78c-4-22-18-34-36-36 2 18 14 34 36 36z" fill="#F2B36A"/>';
-  if (coat === 'cheese' || coat === 'gray') s += `<path d="M92 50v10M100 48v12M108 50v10" stroke="${C.mark}" stroke-width="5" stroke-linecap="round"/>`;
+  if (coat === 'siamese') s += `<ellipse cx="100" cy="106" rx="30" ry="22" fill="${C.mark}" opacity="0.55"/>`;
+  if (['cheese', 'gray', 'cream', 'brown', 'pink', 'mint', 'lavender', 'sky', 'lemon', 'gold'].includes(coat)) s += `<path d="M92 50v10M100 48v12M108 50v10" stroke="${C.mark}" stroke-width="5" stroke-linecap="round"/>`;
   s += '<ellipse cx="60" cy="112" rx="10" ry="5" fill="#FF8FA3" opacity="0.55"/><ellipse cx="140" cy="112" rx="10" ry="5" fill="#FF8FA3" opacity="0.55"/>';
   s += `<path d="M18 102h16M16 112l18-3M166 102h16M166 109l18 3" ${O4}/>`;
   let ex = expression(expr) ?? '';
-  if (coat === 'black') ex = ex.split(`fill="${INK}"`).join('fill="#FFE27A"').split(`stroke="${INK}"`).join('stroke="#FFE27A"');
+  if (coat === 'black' || coat === 'choco') ex = ex.split(`fill="${INK}"`).join('fill="#FFE27A"').split(`stroke="${INK}"`).join('stroke="#FFE27A"');
   s += `<g transform="translate(100 96) scale(1.15 1) translate(-100 -88)">${ex}${faceDeco(face)}</g>`;
   return s + '</svg>';
 }
