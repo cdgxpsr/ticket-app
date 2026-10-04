@@ -22,7 +22,7 @@ export default function EventDetail() {
   return (
     <SafeAreaView style={styles.safe}>
       <View style={styles.top}>
-        <Pressable onPress={() => (router.canGoBack() ? router.back() : router.replace('/explore'))}><Text style={styles.link}>닫기</Text></Pressable>
+        <Pressable onPress={() => (router.canGoBack() ? router.back() : router.replace('/'))}><Text style={styles.link}>닫기</Text></Pressable>
         <Text style={styles.title}>문화 소식</Text>
         <View style={{ width: 32 }} />
       </View>

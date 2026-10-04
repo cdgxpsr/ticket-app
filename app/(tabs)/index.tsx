@@ -1,71 +1,134 @@
-import { router, useFocusEffect } from 'expo-router';
-import { useCallback, useState } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
-import { CatAvatar } from '../../src/components/CatAvatar';
-import { Placeholder, Screen } from '../../src/components/Screen';
-import { MiniTicket, Stars, timeAgo } from '../../src/components/Social';
-import { repo, type FeedPost, type User } from '../../src/data';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { router } from 'expo-router';
+import { useEffect, useState } from 'react';
+import { ActivityIndicator, Image, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import Svg, { Circle, Path } from 'react-native-svg';
+import { Screen } from '../../src/components/Screen';
+import { Chip } from '../../src/components/Social';
+import { repo, type Explore as ExploreData } from '../../src/data';
+import { CULTURE_CATEGORIES, KOBIS_CREDIT, REGIONS, formatPeriod, getCultureEvents, type CultureEvent } from '../../src/data/culture';
 import { colors, fonts } from '../../src/theme';
 
-export default function Feed() {
-  const [posts, setPosts] = useState<FeedPost[]>([]);
-  const [friends, setFriends] = useState<User[]>([]);
-  useFocusEffect(useCallback(() => {
-    repo.getFeed().then(setPosts);
-    repo.getFriends().then(setFriends);
-  }, []));
+const REGION_KEY = 'explore.region';
+const CAT_COLOR: Record<string, string> = { 영화: '#5B4B8A', 공연: '#8A3B5B', 전시: '#2F6B6B', 축제: '#A0522D', 액티비티: '#3E6B3A', 숙박: '#4A5A80' };
 
-  const toggle = async (id: string) => {
-    await repo.like(id);
-    setPosts(await repo.getFeed());
+const GROUP: Record<string, string[]> = { 공연: ['공연', '뮤지컬', '연극', '콘서트'], 전시: ['전시', '박물관'], 영화: ['영화'], 액티비티: ['액티비티', '스포츠'] };
+
+export default function Explore() {
+  const [data, setData] = useState<ExploreData>();
+  const [cat, setCat] = useState('전체');
+  const [q, setQ] = useState('');
+  const [region, setRegion] = useState('전국');
+  const [ccat, setCcat] = useState('전체');
+  const [events, setEvents] = useState<CultureEvent[]>();
+  const [sample, setSample] = useState(false);
+  useEffect(() => void repo.getExplore().then(setData).catch(() => {}), []);
+  useEffect(() => {
+    AsyncStorage.getItem(REGION_KEY).then((r) => r && (REGIONS as readonly string[]).includes(r) && setRegion(r)).catch(() => {});
+  }, []);
+  useEffect(() => {
+    let alive = true;
+    setEvents(undefined);
+    getCultureEvents(region, ccat).then((r) => {
+      if (!alive) return;
+      setEvents(r.events);
+      setSample(r.sample);
+    });
+    return () => { alive = false; };
+  }, [region, ccat]);
+  const pickRegion = (r: string) => {
+    setRegion(r);
+    AsyncStorage.setItem(REGION_KEY, r).catch(() => {});
   };
+  const shown = (events ?? []).filter((e) => !q.trim() || e.title.includes(q.trim()) || (e.venue ?? '').includes(q.trim()));
+
+  const popular = (data?.popular ?? []).filter(
+    (p) => (cat === '전체' || (GROUP[cat] ?? [cat]).includes(p.category)) && (!q.trim() || p.title.includes(q.trim()) || (p.venue ?? '').includes(q.trim())),
+  );
+  const nearby = (data?.nearby ?? []).filter((n) => !q.trim() || n.name.includes(q.trim()));
 
   return (
-    <Screen
-      title="피드"
-      header={<Pressable style={styles.addBtn} onPress={() => router.push('/friends')}><Text style={styles.addText}>친구 추가</Text></Pressable>}
-    >
-      {friends.length > 0 && (
-        <View style={styles.banner}>
-          <View style={{ flexDirection: 'row', paddingLeft: 8 }}>
-            {friends.slice(0, 3).map((u) => (
-              <View key={u.id} style={styles.stackItem}><CatAvatar size={30} avatar={u.avatar} /></View>
-            ))}
-          </View>
-          <Text style={styles.bannerText}>
-            <Text style={{ fontFamily: fonts.semibold }}>{friends[0].name}님{friends.length > 1 ? ` 외 ${friends.length - 1}명` : ''}</Text>이 같은 날 〈오페라의 유령〉을 봤어요
-          </Text>
-          <Pressable onPress={() => router.push('/community')}><Text style={styles.lounge}>라운지</Text></Pressable>
+    <Screen title="둘러보기">
+      <View style={styles.search}>
+        <Svg width={18} height={18} viewBox="0 0 24 24"><Circle cx={11} cy={11} r={6.5} stroke="#8E859A" strokeWidth={1.8} fill="none" /><Path d="M16 16l4 4" stroke="#8E859A" strokeWidth={1.8} strokeLinecap="round" /></Svg>
+        <TextInput value={q} onChangeText={setQ} placeholder="전시, 공연, 영화, 장소 검색" placeholderTextColor="#8E859A" style={styles.input} />
+      </View>
+      <Text style={styles.section}>지역별 문화거리</Text>
+      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8 }} style={{ marginHorizontal: -20 }}>
+        <View style={{ width: 12 }} />
+        {REGIONS.map((r) => <Chip key={r} label={r} on={r === region} onPress={() => pickRegion(r)} />)}
+        <View style={{ width: 12 }} />
+      </ScrollView>
+      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8 }} style={{ marginHorizontal: -20 }}>
+        <View style={{ width: 12 }} />
+        {CULTURE_CATEGORIES.map((c) => <Chip key={c} label={c} on={c === ccat} onPress={() => setCcat(c)} />)}
+        <View style={{ width: 12 }} />
+      </ScrollView>
+      {sample && <Text style={styles.muted}>예시 정보를 보여주고 있어요 · 매일 새벽 최신 정보로 갱신돼요</Text>}
+      {!events ? (
+        <ActivityIndicator color={colors.accent} style={{ marginVertical: 24 }} />
+      ) : shown.length === 0 ? (
+        <Text style={styles.muted}>{region}에 해당하는 {ccat === '전체' ? '문화 소식' : ccat}이 아직 없어요</Text>
+      ) : (
+        <View style={{ gap: 12 }}>
+          {shown.slice(0, 60).map((e) => (
+            <Pressable key={e.id} style={styles.card} onPress={() => router.push({ pathname: '/event/[id]', params: { id: e.id } })}>
+              {e.image_url ? (
+                <Image source={{ uri: e.image_url }} style={styles.thumb} resizeMode="cover" />
+              ) : (
+                <View style={[styles.thumb, { backgroundColor: CAT_COLOR[e.category] ?? colors.border, alignItems: 'center', justifyContent: 'center' }]}>
+                  <Text style={styles.thumbText}>{e.category}</Text>
+                </View>
+              )}
+              <View style={{ flex: 1, gap: 4 }}>
+                <Text style={styles.badge}>{e.category} · {e.region}</Text>
+                <Text style={styles.cardTitle} numberOfLines={2}>{e.title}</Text>
+                {!!(e.venue || e.address) && <Text style={styles.muted} numberOfLines={1}>{e.venue || e.address}</Text>}
+                <Text style={styles.muted}>{formatPeriod(e)}</Text>
+              </View>
+            </Pressable>
+          ))}
+          {shown.some((e) => e.category === '영화') && <Text style={styles.credit}>{KOBIS_CREDIT}</Text>}
         </View>
       )}
-      {posts.length === 0 && <Placeholder text="아직 새 소식이 없어요" />}
-      <View>
-        {posts.map((p) => (
-          <View key={p.id} style={styles.post}>
-            <CatAvatar size={42} avatar={p.author.avatar} />
-            <View style={{ flex: 1, gap: 10 }}>
-              <Text style={styles.who}>
-                <Text style={{ fontFamily: fonts.semibold, color: colors.text }}>{p.author.name}</Text>
-                <Text style={styles.muted}>님이 관람했어요 · {timeAgo(p.createdAt)}</Text>
-              </Text>
-              <View style={styles.card}>
-                <MiniTicket show={p.show} />
-                <View style={{ flex: 1, gap: 4 }}>
-                  <Text style={styles.showTitle}>{p.show.title}</Text>
-                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-                    <Stars value={p.rating} size={13} />
-                    <Text style={styles.rating}>{p.rating.toFixed(1)}</Text>
-                  </View>
-                  {!!p.text && <Text style={styles.review}>{p.text}</Text>}
-                </View>
+      <Text style={[styles.section, { marginTop: 10 }]}>냥냥 기록 둘러보기</Text>
+      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8 }} style={{ marginHorizontal: -20 }}>
+        <View style={{ width: 12 }} />
+        {(data?.categories ?? []).map((c) => <Chip key={c} label={c} on={c === cat} onPress={() => setCat(c)} />)}
+        <View style={{ width: 12 }} />
+      </ScrollView>
+      <View style={styles.sectionRow}>
+        <Text style={styles.section}>이번 주 많이 다녀온 곳</Text>
+        <Text style={styles.muted}>전체보기</Text>
+      </View>
+      {popular.length === 0 ? (
+        <Text style={styles.muted}>조건에 맞는 곳이 없어요</Text>
+      ) : (
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginHorizontal: -20 }} contentContainerStyle={{ paddingHorizontal: 20, gap: 12 }}>
+          {popular.map((p) => (
+            <View key={p.id} style={{ width: 148, gap: 8 }}>
+              <View style={[styles.poster, { backgroundColor: p.color }]}>
+                <Text style={styles.posterCat}>{p.category}</Text>
+                <View style={styles.circle} />
+                <Text style={styles.posterTitle}>{p.title}</Text>
               </View>
-              <View style={styles.actions}>
-                <Pressable onPress={() => toggle(p.id)} hitSlop={8} accessibilityRole="button">
-                  <Text style={[styles.action, p.liked && { color: colors.accent }]}>좋아요 {p.likes}</Text>
-                </Pressable>
-                <Text style={styles.action}>댓글 {p.comments.length}</Text>
+              <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+                <Text style={styles.rating}>★ {p.rating.toFixed(1)}</Text>
+                <Text style={styles.muted}>인증 후기 {p.reviews}</Text>
               </View>
             </View>
+          ))}
+        </ScrollView>
+      )}
+      <Text style={[styles.section, { marginTop: 6 }]}>내 근처</Text>
+      <View>
+        {nearby.map((n) => (
+          <View key={n.id} style={styles.near}>
+            <View style={{ gap: 3, flex: 1 }}>
+              <Text style={styles.nearName}>{n.name}</Text>
+              <Text style={styles.muted}>{n.info}</Text>
+            </View>
+            <Svg width={16} height={16} viewBox="0 0 24 24"><Path d="M9 5l7 7-7 7" stroke="#7D748A" strokeWidth={2} fill="none" strokeLinecap="round" /></Svg>
           </View>
         ))}
       </View>
@@ -74,19 +137,22 @@ export default function Feed() {
 }
 
 const styles = StyleSheet.create({
-  addBtn: { height: 36, paddingHorizontal: 14, borderRadius: 18, backgroundColor: '#231E2B', justifyContent: 'center' },
-  addText: { color: colors.text, fontFamily: fonts.semibold, fontSize: 14 },
-  banner: { padding: 14, borderRadius: 18, backgroundColor: colors.surface, flexDirection: 'row', alignItems: 'center', gap: 12 },
-  stackItem: { marginLeft: -8, borderWidth: 2, borderColor: colors.surface, borderRadius: 17 },
-  bannerText: { flex: 1, color: colors.text, fontFamily: fonts.regular, fontSize: 14, lineHeight: 20 },
-  lounge: { color: colors.accent, fontFamily: fonts.bold, fontSize: 13 },
-  post: { paddingVertical: 18, borderBottomWidth: 1, borderBottomColor: '#262030', flexDirection: 'row', gap: 12 },
-  who: { fontSize: 14, fontFamily: fonts.regular },
-  muted: { color: '#8E859A', fontFamily: fonts.regular, fontSize: 14 },
-  card: { flexDirection: 'row', gap: 12, padding: 12, borderRadius: 16, backgroundColor: colors.surface },
-  showTitle: { color: colors.text, fontFamily: fonts.bold, fontSize: 16 },
+  search: { height: 46, borderRadius: 14, backgroundColor: colors.surface, flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 14 },
+  input: { flex: 1, color: colors.text, fontFamily: fonts.regular, fontSize: 15 },
+  sectionRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'baseline', marginTop: 6 },
+  section: { color: colors.text, fontFamily: fonts.bold, fontSize: 18, letterSpacing: -0.4 },
+  muted: { color: '#8E859A', fontFamily: fonts.regular, fontSize: 13 },
+  poster: { height: 196, borderRadius: 16, padding: 14, justifyContent: 'space-between', overflow: 'hidden' },
+  posterCat: { color: 'rgba(255,255,255,0.8)', fontFamily: fonts.semibold, fontSize: 12 },
+  circle: { position: 'absolute', right: -20, top: 40, width: 90, height: 90, borderRadius: 45, backgroundColor: 'rgba(255,255,255,0.12)' },
+  posterTitle: { color: '#fff', fontFamily: fonts.bold, fontSize: 18, lineHeight: 23, letterSpacing: -0.5 },
   rating: { color: colors.accent, fontFamily: fonts.semibold, fontSize: 13 },
-  review: { color: '#D9D1E3', fontFamily: fonts.regular, fontSize: 14, lineHeight: 21 },
-  actions: { flexDirection: 'row', gap: 16 },
-  action: { color: '#8E859A', fontFamily: fonts.regular, fontSize: 13 },
+  near: { flexDirection: 'row', alignItems: 'center', paddingVertical: 13, borderBottomWidth: 1, borderBottomColor: '#262030' },
+  credit: { color: '#6F6680', fontFamily: fonts.regular, fontSize: 11 },
+  card: { flexDirection: 'row', gap: 12, padding: 10, borderRadius: 16, backgroundColor: colors.surface },
+  thumb: { width: 76, height: 100, borderRadius: 10, overflow: 'hidden' },
+  thumbText: { color: '#fff', fontFamily: fonts.bold, fontSize: 14 },
+  badge: { color: colors.accent, fontFamily: fonts.semibold, fontSize: 12 },
+  cardTitle: { color: colors.text, fontFamily: fonts.bold, fontSize: 16, lineHeight: 21, letterSpacing: -0.3 },
+  nearName: { color: colors.text, fontFamily: fonts.semibold, fontSize: 15 },
 });
