@@ -1,7 +1,6 @@
 import { router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useState } from 'react';
-import * as WebBrowser from 'expo-web-browser';
-import { ActivityIndicator, Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Image, Linking, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { KOBIS_CREDIT, TMDB_CREDIT, httpsUrl, formatPeriod, getNearbyStays, getCultureEvent, type CultureEvent } from '../../src/data/culture';
 import { colors, fonts } from '../../src/theme';
@@ -21,7 +20,8 @@ function bookingButtons(e: CultureEvent): { name: string; url: string }[] {
   if (links.length) return links.map((l) => ({ name: l.name, url: httpsUrl(l.url)! }));
   return [{ name: '네이버에서 예약 찾기', url: naver(`${e.title} ${e.venue || e.region}`) }];
 }
-const open = (url: string) => WebBrowser.openBrowserAsync(url, { presentationStyle: WebBrowser.WebBrowserPresentationStyle.PAGE_SHEET }).catch(() => {});
+// 예매는 외부 앱/사파리로 연다. https 링크는 CGV·인터파크 등 앱이 설치돼 있으면 그 앱으로 바로 열린다(유니버설 링크).
+const open = (url: string) => Linking.openURL(url).catch(() => {});
 
 export default function EventDetail() {
   const { id } = useLocalSearchParams<{ id: string }>();
