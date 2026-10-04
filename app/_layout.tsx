@@ -6,6 +6,7 @@ import { useEffect, useState } from 'react';
 import { View } from 'react-native';
 import { ToastHost } from '../src/components/Social';
 import { colors } from '../src/theme';
+import { I18nProvider } from '../src/i18n';
 
 // Keep the native splash up at least 1s so the logo doesn't just flash.
 SplashScreen.preventAutoHideAsync().catch(() => {});
@@ -23,12 +24,12 @@ export default function RootLayout() {
   useEffect(() => { if (loaded && minDone) SplashScreen.hideAsync().catch(() => {}); }, [loaded, minDone]);
   if (!loaded) return <View style={{ flex: 1, backgroundColor: colors.bg }} />;
   return (
-    <>
+    <I18nProvider>
       <StatusBar style="light" />
       <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: colors.bg } }}>
         <Stack.Screen name="login" options={{ presentation: 'formSheet', sheetAllowedDetents: [0.55], sheetGrabberVisible: false }} />
       </Stack>
       <ToastHost />
-    </>
+    </I18nProvider>
   );
 }

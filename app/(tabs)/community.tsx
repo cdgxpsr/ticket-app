@@ -7,6 +7,7 @@ import { Placeholder } from '../../src/components/Screen';
 import { Chip, timeAgo } from '../../src/components/Social';
 import { BOARDS, repo, type Board, type BoardPost } from '../../src/data';
 import { colors, fonts } from '../../src/theme';
+import { t } from '../../src/i18n';
 
 export default function Community() {
   const [board, setBoard] = useState<Board>('라운지');
@@ -16,24 +17,24 @@ export default function Community() {
   return (
     <SafeAreaView style={styles.safe} edges={['top']}>
       <ScrollView contentContainerStyle={styles.content}>
-        <Text style={styles.title}>커뮤니티</Text>
+        <Text style={styles.title}>{t('커뮤니티')}</Text>
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8 }}>
-          {BOARDS.map((b) => <Chip key={b} label={b} on={b === board} onPress={() => setBoard(b)} />)}
+          {BOARDS.map((b) => <Chip key={b} label={t(b)} on={b === board} onPress={() => setBoard(b)} />)}
         </ScrollView>
-        {posts.length === 0 && <Placeholder text="첫 글을 기다리고 있어요" />}
+        {posts.length === 0 && <Placeholder text={t('첫 글을 기다리고 있어요')} />}
         {posts.map((p, i) => {
           const hero = board === '라운지' && i === 0 && p.tag === '회차 라운지';
           return (
             <Pressable key={p.id} onPress={() => router.push(`/post/${p.id}`)} style={[styles.card, hero && styles.hero]}>
               <View style={styles.metaRow}>
-                {!!p.tag && <Text style={[styles.tag, hero && styles.heroTag]}>{hero ? `${p.tag} · 티켓 인증한 관객만` : p.tag}</Text>}
+                {!!p.tag && <Text style={[styles.tag, hero && styles.heroTag]}>{hero ? `${p.tag} · ${t('티켓 인증한 관객만')}` : p.tag}</Text>}
                 <Text style={styles.muted}>{timeAgo(p.createdAt)}</Text>
               </View>
               <Text style={[styles.postTitle, hero && { fontSize: 20, fontFamily: fonts.bold }]}>{p.title}</Text>
               <View style={{ flexDirection: 'row', gap: 10, alignItems: 'flex-start' }}>
                 <CatAvatar size={30} avatar={p.author.avatar} />
                 <Text style={[styles.body, hero && { color: '#F1D9DC' }]} numberOfLines={2}>
-                  {p.verified && <Text style={styles.verified}>관람 인증 </Text>}
+                  {p.verified && <Text style={styles.verified}>{t('관람 인증')} </Text>}
                   {p.body}
                 </Text>
               </View>
@@ -47,13 +48,13 @@ export default function Community() {
                   ))}
                 </View>
               )}
-              <Text style={[styles.muted, hero && { color: '#F1D9DC' }]}>{board === '질문' ? '답변' : '댓글'} {p.comments.length} · 좋아요 {p.likes}</Text>
+              <Text style={[styles.muted, hero && { color: '#F1D9DC' }]}>{t(board === '질문' ? '답변 {n}' : '댓글 {n}', { n: p.comments.length })} · {t('좋아요 {n}', { n: p.likes })}</Text>
             </Pressable>
           );
         })}
       </ScrollView>
       <Pressable style={styles.fab} onPress={() => router.push({ pathname: '/post/new', params: { board } })}>
-        <Text style={styles.fabText}>글쓰기</Text>
+        <Text style={styles.fabText}>{t('글쓰기')}</Text>
       </Pressable>
     </SafeAreaView>
   );

@@ -3,6 +3,7 @@ import { Dimensions, Image, Modal, Pressable, ScrollView, StyleSheet, Text, View
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { OriginalPhoto } from '../lib/originals';
 import { colors, fonts } from '../theme';
+import { t } from '../i18n';
 
 const SAMPLE_TONES = ['#3A2F4A', '#4A3A2F', '#2F4A44', '#4A2F3B', '#2F364A', '#44402B'];
 
@@ -14,7 +15,7 @@ export function OriginalAlbum({ photos }: { photos: OriginalPhoto[] }) {
 
   return (
     <View>
-      {!photos.length && <Text style={styles.hint}>아직 보관된 원본이 없어요. 아래는 예시입니다.</Text>}
+      {!photos.length && <Text style={styles.hint}>{t('아직 보관된 원본이 없어요. 아래는 예시입니다.')}</Text>}
       <View style={styles.grid}>
         {cells.map((c) => (
           <Pressable key={c.id} style={styles.cell} onPress={() => ('uri' in c ? setOpen(c) : undefined)}>
@@ -25,7 +26,7 @@ export function OriginalAlbum({ photos }: { photos: OriginalPhoto[] }) {
       <Modal visible={!!open} animationType="fade" onRequestClose={() => setOpen(null)}>
         <SafeAreaView style={styles.viewer}>
           <Pressable onPress={() => setOpen(null)} style={styles.close}>
-            <Text style={styles.closeText}>닫기</Text>
+            <Text style={styles.closeText}>{t('닫기')}</Text>
           </Pressable>
           <ScrollView maximumZoomScale={4} minimumZoomScale={1} centerContent contentContainerStyle={{ flexGrow: 1, justifyContent: 'center' }}>
             {open && <Image source={{ uri: open.uri }} style={styles.full} resizeMode="contain" />}

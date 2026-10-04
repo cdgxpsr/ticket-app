@@ -7,6 +7,7 @@ import { CatAvatar } from '../../src/components/CatAvatar';
 import { PawStamp } from '../../src/components/PawStamp';
 import { claimInviteReward, getInviteState, saveReferrer } from '../../src/lib/invite';
 import { colors, fonts } from '../../src/theme';
+import { t } from '../../src/i18n';
 
 // Handles nyangsucheop://i/<code> and https://nyangsucheop.app/i/<code>.
 export default function InviteWelcome() {
@@ -33,12 +34,12 @@ export default function InviteWelcome() {
       <View style={styles.body}>
         <PawStamp size={64} color={colors.accent} rotate={-18} />
         <CatAvatar size={120} />
-        <Text style={styles.title}>냥냥수첩에 오신 걸 환영해요</Text>
-        <Text style={styles.desc}>친구의 초대로 아바타 아이템 선물이 도착했어요.</Text>
+        <Text style={styles.title}>{t('냥냥수첩에 오신 걸 환영해요')}</Text>
+        <Text style={styles.desc}>{t('친구의 초대로 아바타 아이템 선물이 도착했어요.')}</Text>
         <Pressable style={[styles.btn, claimed && styles.btnDone]} disabled={claimed} onPress={claim}>
-          <Text style={[styles.btnText, claimed && { color: colors.muted }]}>{claimed ? '받았어요' : '받기'}</Text>
+          <Text style={[styles.btnText, claimed && { color: colors.muted }]}>{claimed ? t('받았어요') : t('받기')}</Text>
         </Pressable>
-        <Pressable onPress={() => router.replace('/')}><Text style={styles.link}>시작하기</Text></Pressable>
+        <Pressable onPress={() => router.replace('/')}><Text style={styles.link}>{t('시작하기')}</Text></Pressable>
       </View>
     </SafeAreaView>
   );

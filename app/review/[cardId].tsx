@@ -8,6 +8,7 @@ import { CATEGORY_COLORS, MiniTicket, showToast, Stars } from '../../src/compone
 import { repo, type Show } from '../../src/data';
 import { getCard } from '../../src/lib/cards';
 import { colors, fonts } from '../../src/theme';
+import { t } from '../../src/i18n';
 
 export default function WriteReview() {
   const { cardId } = useLocalSearchParams<{ cardId: string }>();
@@ -18,7 +19,7 @@ export default function WriteReview() {
   const ok = rating > 0 && !busy;
 
   const show: Show | undefined = card && {
-    id: `card-${card.id}`, title: card.title || '제목 없는 티켓', category: card.category, venue: card.venue, date: card.date,
+    id: `card-${card.id}`, title: card.title || t('제목 없는 티켓'), category: card.category, venue: card.venue, date: card.date,
     color: CATEGORY_COLORS[card.category] ?? CATEGORY_COLORS['기타'],
   };
 
@@ -28,15 +29,15 @@ export default function WriteReview() {
     setBusy(true);
     await repo.createReview({ show, rating, text: text.trim(), cardId: card!.id });
     const total = await repo.addStamp(1);
-    showToast(`발도장 1개 받았어요 · 모은 발도장 ${total}개`);
+    showToast(t('발도장 1개 받았어요 · 모은 발도장 {n}개', { n: total }));
     router.replace('/tickets');
   };
 
   return (
     <SafeAreaView style={styles.safe}>
-      <Header title="후기 쓰기" right={<Pressable onPress={save} disabled={!ok}><Text style={[styles.done, !ok && { opacity: 0.4 }]}>등록</Text></Pressable>} />
+      <Header title={t('후기 쓰기')} right={<Pressable onPress={save} disabled={!ok}><Text style={[styles.done, !ok && { opacity: 0.4 }]}>{t('등록')}</Text></Pressable>} />
       {!show ? (
-        <Text style={[styles.muted, { padding: 20 }]}>카드를 찾을 수 없어요.</Text>
+        <Text style={[styles.muted, { padding: 20 }]}>{t('카드를 찾을 수 없어요.')}</Text>
       ) : (
         <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
           <ScrollView contentContainerStyle={styles.body} keyboardShouldPersistTaps="handled">
@@ -48,12 +49,12 @@ export default function WriteReview() {
               </View>
             </View>
             <View style={{ alignItems: 'center', gap: 10 }}>
-              <Text style={styles.label}>별점</Text>
+              <Text style={styles.label}>{t('별점')}</Text>
               <Stars value={rating} size={40} onChange={setRating} />
-              <Text style={styles.score}>{rating > 0 ? rating.toFixed(1) : '별을 눌러 평가해 주세요'}</Text>
+              <Text style={styles.score}>{rating > 0 ? rating.toFixed(1) : t('별을 눌러 평가해 주세요')}</Text>
             </View>
-            <TextInput value={text} onChangeText={setText} placeholder="어떤 점이 좋았나요? 친구들에게 이야기해 주세요" placeholderTextColor="#8E859A" style={styles.input} multiline textAlignVertical="top" maxLength={500} />
-            <Text style={styles.muted}>후기를 남기면 발도장 1개를 받아요</Text>
+            <TextInput value={text} onChangeText={setText} placeholder={t('어떤 점이 좋았나요? 친구들에게 이야기해 주세요')} placeholderTextColor="#8E859A" style={styles.input} multiline textAlignVertical="top" maxLength={500} />
+            <Text style={styles.muted}>{t('후기를 남기면 발도장 1개를 받아요')}</Text>
           </ScrollView>
         </KeyboardAvoidingView>
       )}

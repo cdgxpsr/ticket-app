@@ -1,6 +1,7 @@
 import { StyleSheet, Text, View } from 'react-native';
 import { colors, fonts } from '../theme';
 import { PawStamp } from './PawStamp';
+import { t } from '../i18n';
 
 export type Ticket = { id: string; title: string; venue: string; date: string; seat: string; category?: string; time?: string };
 
@@ -10,7 +11,7 @@ export function TicketCard({ ticket, large }: { ticket: Ticket; large?: boolean 
       <View style={styles.accentBar} />
       <View style={styles.body}>
         {!!ticket.category && <Text style={styles.cat}>{ticket.category}</Text>}
-        <Text style={[styles.title, large && styles.titleLarge]}>{ticket.title || '제목 없음'}</Text>
+        <Text style={[styles.title, large && styles.titleLarge]}>{ticket.title || t('제목 없음')}</Text>
         <Text style={styles.meta}>{ticket.venue}</Text>
         <Text style={styles.meta}>{[ticket.date, ticket.time].filter(Boolean).join(' ')}{ticket.seat ? ` · ${ticket.seat}` : ''}</Text>
       </View>

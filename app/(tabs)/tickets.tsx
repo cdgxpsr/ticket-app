@@ -9,6 +9,7 @@ import { Ticket, TicketCard } from '../../src/components/TicketCard';
 import { listCards, SavedCard, syncCards } from '../../src/lib/cards';
 import { listOriginals, OriginalPhoto } from '../../src/lib/originals';
 import { colors, fonts } from '../../src/theme';
+import { t } from '../../src/i18n';
 
 const SAMPLE: Ticket[] = [
   { id: '1', title: '고양이 뮤지컬', venue: '냥냥아트홀', date: '2026.11.14', seat: 'R석 7열' },
@@ -26,20 +27,20 @@ export default function Tickets() {
 
   return (
     <Screen
-      title="내 티켓"
-      subtitle="모아둔 관람 기록"
+      title={t('내 티켓')}
+      subtitle={t('모아둔 관람 기록')}
       header={
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
-        <Pressable onPress={() => router.push({ pathname: '/shop', params: { tab: 'inv' } })} accessibilityLabel="아바타 꾸미기">
+        <Pressable onPress={() => router.push({ pathname: '/shop', params: { tab: 'inv' } })} accessibilityLabel={t('아바타 꾸미기')}>
           <CatAvatar size={44} />
         </Pressable>
-        <Pressable onPress={() => router.push('/capture')} style={styles.add} accessibilityLabel="티켓 추가">
+        <Pressable onPress={() => router.push('/capture')} style={styles.add} accessibilityLabel={t('티켓 추가')}>
           <Text style={styles.addText}>+</Text>
         </Pressable>
         </View>
       }
     >
-      <Segmented<Mode> options={[{ key: 'cards', label: '카드' }, { key: 'originals', label: '원본 앨범' }]} value={mode} onChange={setMode} />
+      <Segmented<Mode> options={[{ key: 'cards', label: t('카드') }, { key: 'originals', label: t('원본 앨범') }]} value={mode} onChange={setMode} />
       {mode === 'cards'
         ? cards.length
           ? cards.map((c) => (
@@ -47,7 +48,7 @@ export default function Tickets() {
                 <TicketCard ticket={c} />
               </Pressable>
             ))
-          : SAMPLE.map((t) => <TicketCard key={t.id} ticket={t} />) : <OriginalAlbum photos={photos} />}
+          : SAMPLE.map((s) => <TicketCard key={s.id} ticket={{ ...s, title: t(s.title), venue: t(s.venue), seat: t(s.seat) }} />) : <OriginalAlbum photos={photos} />}
     </Screen>
   );
 }

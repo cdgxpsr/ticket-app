@@ -6,6 +6,7 @@ import { PawStamp } from '../../src/components/PawStamp';
 import { addCard } from '../../src/lib/cards';
 import { CATEGORIES, EMPTY, Recognized, recognizeTicket } from '../../src/services/recognizeTicket';
 import { colors, fonts } from '../../src/theme';
+import { t } from '../../src/i18n';
 
 const FIELDS: { key: Exclude<keyof Recognized, 'category'>; label: string; placeholder: string }[] = [
   { key: 'title', label: '제목', placeholder: '공연·전시 이름' },
@@ -31,7 +32,7 @@ export default function NewCard() {
   }, [imageUri]);
 
   function save() {
-    if (!form.title.trim()) return Alert.alert('제목을 입력해 주세요');
+    if (!form.title.trim()) return Alert.alert(t('제목을 입력해 주세요'));
     const card = addCard({ ...form, imageUri, originalUri: originalUri || undefined });
     router.replace({ pathname: '/card/[id]', params: { id: card.id } });
   }
@@ -40,8 +41,8 @@ export default function NewCard() {
     return (
       <SafeAreaView style={[styles.safe, styles.center]}>
         <PawStamp size={72} />
-        <Text style={styles.reading}>읽는 중</Text>
-        <Text style={styles.desc}>티켓의 내용을 살펴보고 있어요.</Text>
+        <Text style={styles.reading}>{t('읽는 중')}</Text>
+        <Text style={styles.desc}>{t('티켓의 내용을 살펴보고 있어요.')}</Text>
       </SafeAreaView>
     );
   }
@@ -49,34 +50,34 @@ export default function NewCard() {
   return (
     <SafeAreaView style={styles.safe}>
       <View style={styles.top}>
-        <Pressable onPress={() => router.back()}><Text style={styles.link}>취소</Text></Pressable>
-        <Text style={styles.title}>카드 확인</Text>
-        <Pressable onPress={save}><Text style={[styles.link, { color: colors.accent }]}>저장</Text></Pressable>
+        <Pressable onPress={() => router.back()}><Text style={styles.link}>{t('취소')}</Text></Pressable>
+        <Text style={styles.title}>{t('카드 확인')}</Text>
+        <Pressable onPress={save}><Text style={[styles.link, { color: colors.accent }]}>{t('저장')}</Text></Pressable>
       </View>
       <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
         <ScrollView contentContainerStyle={styles.body} keyboardShouldPersistTaps="handled">
-          <Text style={styles.desc}>{failed ? '티켓을 읽지 못했어요. 직접 입력해 주세요.' : '읽어 온 내용이 맞는지 확인하고, 틀린 곳은 고쳐 주세요.'}</Text>
-          <Text style={styles.label}>분류</Text>
+          <Text style={styles.desc}>{failed ? t('티켓을 읽지 못했어요. 직접 입력해 주세요.') : t('읽어 온 내용이 맞는지 확인하고, 틀린 곳은 고쳐 주세요.')}</Text>
+          <Text style={styles.label}>{t('분류')}</Text>
           <View style={styles.chips}>
             {CATEGORIES.map((c) => (
               <Pressable key={c} onPress={() => setForm({ ...form, category: c })} style={[styles.chip, form.category === c && styles.chipOn]}>
-                <Text style={[styles.chipText, form.category === c && styles.chipTextOn]}>{c}</Text>
+                <Text style={[styles.chipText, form.category === c && styles.chipTextOn]}>{t(c)}</Text>
               </Pressable>
             ))}
           </View>
           {FIELDS.map((f) => (
             <View key={f.key} style={{ gap: 6 }}>
-              <Text style={styles.label}>{f.label}</Text>
+              <Text style={styles.label}>{t(f.label)}</Text>
               <TextInput
                 value={form[f.key]}
                 onChangeText={(v) => setForm({ ...form, [f.key]: v })}
-                placeholder={f.placeholder}
+                placeholder={t(f.placeholder)}
                 placeholderTextColor={colors.muted}
                 style={styles.input}
               />
             </View>
           ))}
-          <Pressable onPress={save} style={styles.btn}><Text style={styles.btnText}>저장</Text></Pressable>
+          <Pressable onPress={save} style={styles.btn}><Text style={styles.btnText}>{t('저장')}</Text></Pressable>
         </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>

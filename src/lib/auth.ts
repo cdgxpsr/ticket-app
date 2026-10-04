@@ -5,6 +5,7 @@ import { router } from 'expo-router';
 import * as WebBrowser from 'expo-web-browser';
 import { Platform } from 'react-native';
 import { ensureSession, supabase, USE_LOCAL } from './supabase';
+import { t } from '../i18n';
 
 WebBrowser.maybeCompleteAuthSession();
 
@@ -51,7 +52,7 @@ async function oauth(provider: 'kakao' | 'google') {
   const { data, error } = anon
     ? await supabase.auth.linkIdentity({ provider, options: opts })
     : await supabase.auth.signInWithOAuth({ provider, options: opts });
-  if (error || !data?.url) throw error ?? new Error('로그인을 시작하지 못했어요');
+  if (error || !data?.url) throw error ?? new Error(t('로그인을 시작하지 못했어요'));
   const res = await WebBrowser.openAuthSessionAsync(data.url, redirectTo);
   if (res.type !== 'success') return false;
   const url = new URL(res.url);
@@ -69,7 +70,7 @@ async function oauth(provider: 'kakao' | 'google') {
   } else {
     const access_token = hash.get('access_token');
     const refresh_token = hash.get('refresh_token');
-    if (!access_token || !refresh_token) throw new Error('로그인 응답이 올바르지 않아요');
+    if (!access_token || !refresh_token) throw new Error(t('로그인 응답이 올바르지 않아요'));
     const { error: e } = await supabase.auth.setSession({ access_token, refresh_token });
     if (e) throw e;
   }
@@ -78,7 +79,7 @@ async function oauth(provider: 'kakao' | 'google') {
 
 async function signInExisting(provider: 'kakao' | 'google', oldUid: string) {
   const { data, error } = await supabase.auth.signInWithOAuth({ provider, options: { redirectTo, skipBrowserRedirect: true } });
-  if (error || !data?.url) throw error ?? new Error('로그인을 시작하지 못했어요');
+  if (error || !data?.url) throw error ?? new Error(t('로그인을 시작하지 못했어요'));
   const res = await WebBrowser.openAuthSessionAsync(data.url, redirectTo);
   if (res.type !== 'success') return false;
   const url = new URL(res.url);
@@ -109,7 +110,7 @@ async function apple() {
     if ((e as { code?: string }).code === 'ERR_REQUEST_CANCELED') return false;
     throw e;
   }
-  if (!cred.identityToken) throw new Error('Apple 로그인 정보를 받지 못했어요');
+  if (!cred.identityToken) throw new Error(t('Apple 로그인 정보를 받지 못했어요'));
   const { error } = await supabase.auth.signInWithIdToken({ provider: 'apple', token: cred.identityToken, nonce: raw });
   if (error) throw error;
   if (oldUid) {

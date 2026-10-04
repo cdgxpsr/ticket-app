@@ -4,6 +4,7 @@ import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-nati
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { appleAvailable, resolveLogin, signInWith, type Provider } from '../src/lib/auth';
 import { colors, fonts } from '../src/theme';
+import { t } from '../src/i18n';
 
 export default function Login() {
   const [busy, setBusy] = useState<Provider>();
@@ -24,7 +25,7 @@ export default function Login() {
         router.back();
       }
     } catch (e) {
-      setError(e instanceof Error ? e.message : '로그인하지 못했어요');
+      setError(e instanceof Error ? e.message : t('로그인하지 못했어요'));
     } finally {
       setBusy(undefined);
     }
@@ -39,15 +40,15 @@ export default function Login() {
   return (
     <SafeAreaView style={styles.safe} edges={['bottom']}>
       <View style={styles.grab} />
-      <Text style={styles.title}>로그인하면 내 티켓이 안전하게 보관돼요</Text>
-      <Text style={styles.sub}>지금까지 만든 티켓과 기록은 그대로 이어져요.</Text>
+      <Text style={styles.title}>{t('로그인하면 내 티켓이 안전하게 보관돼요')}</Text>
+      <Text style={styles.sub}>{t('지금까지 만든 티켓과 기록은 그대로 이어져요.')}</Text>
       <View style={{ gap: 10, marginTop: 24 }}>
-        <Btn p="kakao" label="카카오로 시작하기" style={styles.kakao} text={{ color: 'rgba(0,0,0,0.85)' }} />
-        {apple && <Btn p="apple" label="Apple로 계속하기" style={styles.apple} text={{ color: '#000000' }} />}
-        <Btn p="google" label="Google로 계속하기" style={styles.google} text={{ color: '#1F1F1F' }} />
+        <Btn p="kakao" label={t('카카오로 시작하기')} style={styles.kakao} text={{ color: 'rgba(0,0,0,0.85)' }} />
+        {apple && <Btn p="apple" label={t('Apple로 계속하기')} style={styles.apple} text={{ color: '#000000' }} />}
+        <Btn p="google" label={t('Google로 계속하기')} style={styles.google} text={{ color: '#1F1F1F' }} />
       </View>
       {!!error && <Text style={styles.error}>{error}</Text>}
-      <Pressable onPress={() => router.back()} style={styles.later}><Text style={styles.laterText}>나중에 할게요</Text></Pressable>
+      <Pressable onPress={() => router.back()} style={styles.later}><Text style={styles.laterText}>{t('나중에 할게요')}</Text></Pressable>
     </SafeAreaView>
   );
 }

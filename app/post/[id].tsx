@@ -8,6 +8,7 @@ import { Header } from '../../src/components/Header';
 import { CommentList, timeAgo } from '../../src/components/Social';
 import { repo, type BoardPost } from '../../src/data';
 import { colors, fonts } from '../../src/theme';
+import { t } from '../../src/i18n';
 
 export default function PostDetail() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -26,10 +27,10 @@ export default function PostDetail() {
 
   return (
     <SafeAreaView style={styles.safe}>
-      <Header title={post?.board ?? '게시글'} />
+      <Header title={post?.board ? t(post.board) : t('게시글')} />
       <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
         {!post ? (
-          <Text style={[styles.muted, { padding: 20 }]}>글을 찾을 수 없어요.</Text>
+          <Text style={[styles.muted, { padding: 20 }]}>{t('글을 찾을 수 없어요.')}</Text>
         ) : (
           <ScrollView contentContainerStyle={styles.body}>
             <View style={{ flexDirection: 'row', gap: 10, alignItems: 'center' }}>
@@ -43,16 +44,16 @@ export default function PostDetail() {
             {!!post.body && <Text style={styles.text}>{post.body}</Text>}
             {post.images?.map((u) => <Image key={u} source={{ uri: u }} style={styles.photo} resizeMode="cover" />)}
             <Pressable onPress={async () => { await repo.like(post.id); reload(); }} style={[styles.like, post.liked && { borderColor: colors.accent }]}>
-              <Text style={[styles.likeText, post.liked && { color: colors.accent }]}>좋아요 {post.likes}</Text>
+              <Text style={[styles.likeText, post.liked && { color: colors.accent }]}>{t('좋아요 {n}', { n: post.likes })}</Text>
             </Pressable>
-            <Text style={styles.section}>댓글 {post.comments.length}</Text>
+            <Text style={styles.section}>{t('댓글 {n}', { n: post.comments.length })}</Text>
             <CommentList comments={post.comments} />
           </ScrollView>
         )}
         {!!post && (
           <View style={styles.inputRow}>
-            <TextInput value={text} onChangeText={setText} placeholder="댓글을 남겨 주세요" placeholderTextColor="#8E859A" style={styles.input} onSubmitEditing={send} returnKeyType="send" />
-            <Pressable onPress={send}><Text style={[styles.send, !text.trim() && { opacity: 0.4 }]}>등록</Text></Pressable>
+            <TextInput value={text} onChangeText={setText} placeholder={t('댓글을 남겨 주세요')} placeholderTextColor="#8E859A" style={styles.input} onSubmitEditing={send} returnKeyType="send" />
+            <Pressable onPress={send}><Text style={[styles.send, !text.trim() && { opacity: 0.4 }]}>{t('등록')}</Text></Pressable>
           </View>
         )}
       </KeyboardAvoidingView>
