@@ -8,12 +8,6 @@
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "dark",
     "backgroundColor": "#16131C",
-    "splash": {
-      "image": "./assets/splash-icon.png",
-      "resizeMode": "contain",
-      "imageWidth": 110,
-      "backgroundColor": "#1A1A1A"
-    },
     "ios": {
       "bundleIdentifier": "com.nyangsucheop.app",
       "supportsTablet": false,
@@ -22,7 +16,12 @@
       ],
       "usesAppleSignIn": true,
       "infoPlist": {
-        "ITSAppUsesNonExemptEncryption": false
+        "ITSAppUsesNonExemptEncryption": false,
+        "LSApplicationQueriesSchemes": [
+          "nmap",
+          "kakaomap",
+          "naversearchapp"
+        ]
       }
     },
     "android": {
@@ -51,7 +50,20 @@
         }
       ],
       "expo-web-browser",
-      "expo-apple-authentication"
+      "expo-apple-authentication",
+      [
+        "expo-splash-screen",
+        {
+          "image": "./assets/splash-icon.png",
+          "imageWidth": 110,
+          "resizeMode": "contain",
+          "backgroundColor": "#1A1A1A",
+          "dark": {
+            "image": "./assets/splash-icon.png",
+            "backgroundColor": "#1A1A1A"
+          }
+        }
+      ]
     ]
   }
 }
