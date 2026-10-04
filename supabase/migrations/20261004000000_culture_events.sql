@@ -25,7 +25,8 @@ create policy culture_events_read on public.culture_events for select to anon, a
 
 grant usage on schema public to anon, authenticated;
 grant select on public.culture_events to anon, authenticated;
--- No insert/update/delete grants: only the service role (edge function) writes.
+grant all on public.culture_events to service_role;
+-- anon/authenticated get no write grants: only the service role (edge function) writes.
 
 -- Daily sync at 04:00 KST (= 19:00 UTC). Requires pg_cron + pg_net (Dashboard → Database → Extensions).
 -- Run manually in the SQL editor after setting the secrets, replacing <SYNC_SECRET>:
