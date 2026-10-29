@@ -6,6 +6,12 @@ I built this for myself. I go to a lot of films, shows, exhibitions and festival
 
 **Status:** shipped to TestFlight, 10 builds so far. Korean, English, Japanese and Simplified Chinese.
 
+<p>
+  <img src="docs/screenshots/explore.png" width="280" alt="Explore: region, category and date filters over public culture data">
+  &nbsp;
+  <img src="docs/screenshots/shop.png" width="280" alt="Cat avatar shop: items bought with churu points earned by logging tickets">
+</p>
+
 ---
 
 ## What it does
