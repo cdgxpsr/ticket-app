@@ -58,7 +58,7 @@ I built this for myself. I go to a lot of films, shows, exhibitions and festival
 
 ## How I built it
 
-I defined the product, the data model and the priorities, and tested every build on my own phone. I used Claude Code as the engineer: most commits in this repository were written by Claude from my specifications, reviewed and merged by me through pull requests. Each feature started as a branch and a PR, which is why the history reads as a series of small, scoped changes.
+I defined the product, the data model and the priorities, and tested every build on my own phone. I used Claude Code as the engineer: Claude Code wrote, committed and merged the code from my specifications through pull requests. Each feature started as a branch and a PR, which is why the history reads as a series of small, scoped changes.
 
 ## Run it locally
 
